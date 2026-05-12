@@ -29,7 +29,6 @@ export default function RoleDashboard() {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // State para sa Real-time Alert
     const [latestAlert, setLatestAlert] = useState(null);
 
     useEffect(() => {
@@ -49,8 +48,6 @@ export default function RoleDashboard() {
                         setUserData({ id: user.uid, ...data });
                         setLoading(false);
 
-                        // PAG-CONNECT SA MESSAGES/ALERTS
-                        // Pakikinggan natin ang 'chats' collection kung saan ang responderId ay itong logged in user
                         const chatsQuery = query(
                             collection(db, "chats"),
                             where("participants", "array-contains", user.uid),
@@ -66,7 +63,6 @@ export default function RoleDashboard() {
                                     userName: chatData.citizenName || "Unknown Citizen",
                                     message: chatData.lastMessage || "Sent an alert",
                                     time: chatData.updatedAt?.toDate() || new Date(),
-                                    // I-assume natin na ang 'Emergency' alert ay base sa keywords o presence ng message
                                     type: "Incoming Message / Alert"
                                 });
                             }
