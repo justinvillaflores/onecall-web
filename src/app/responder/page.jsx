@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Sidebar from "@/components/Sidebar";
 import { useRouter } from "next/navigation";
 import { signOut, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase"; // Siguraduhing na-export ang 'storage' sa firebase config mo
 import {
     doc,
     setDoc,
@@ -16,6 +16,7 @@ import {
     updateDoc,
     deleteDoc
 } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
     UserCircle,
     Search,
@@ -43,6 +44,7 @@ export default function ResponderPage() {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [password, setPassword] = useState("");
     const [imageUrl, setImageUrl] = useState("");
+    const [imageFile, setImageFile] = useState(null); // Bagong state para sa file object
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedResponder, setSelectedResponder] = useState(null);
@@ -75,17 +77,29 @@ export default function ResponderPage() {
         setPhoneNumber("");
         setPassword("");
         setImageUrl("");
+        setImageFile(null);
         setSelectedResponder(null);
     };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        setImageFile(file); // I-save ang actual file para sa upload
         const reader = new FileReader();
         reader.onloadend = () => {
-            setImageUrl(reader.result);
+            setImageUrl(reader.result); // Para sa preview lang
         };
         reader.readAsDataURL(file);
+    };
+
+    // Helper function para sa pag-upload sa Firebase Storage
+    const uploadImage = async (userId) => {
+        if (!imageFile) return imageUrl; // Kung walang bagong file, ibalik ang dating URL
+
+        const storageRef = ref(storage, `responder_logos/${userId}`);
+        const snapshot = await uploadBytes(storageRef, imageFile);
+        return await getDownloadURL(snapshot.ref);
     };
 
     const handleAddResponder = async (e) => {
@@ -95,12 +109,15 @@ export default function ResponderPage() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            // I-upload muna ang image bago i-save ang doc
+            const finalImageUrl = await uploadImage(user.uid);
+
             await setDoc(doc(db, "users", user.uid), {
                 name: serviceName,
                 email: email,
                 phoneNumber: phoneNumber,
                 password: password,
-                imageUrl: imageUrl,
+                imageUrl: finalImageUrl,
                 role: "responder",
                 createdAt: new Date().toISOString()
             });
@@ -121,6 +138,7 @@ export default function ResponderPage() {
         setEmail(responder.email);
         setPhoneNumber(responder.phoneNumber || "");
         setImageUrl(responder.imageUrl || "");
+        setImageFile(null); // Reset file input
         setIsEditModalOpen(true);
     };
 
@@ -130,12 +148,15 @@ export default function ResponderPage() {
 
         setLoading(true);
         try {
+            // I-upload ang bagong image kung meron
+            const finalImageUrl = await uploadImage(selectedResponder.id);
+
             const docRef = doc(db, "users", selectedResponder.id);
             await updateDoc(docRef, {
                 name: serviceName,
                 email: email,
                 phoneNumber: phoneNumber,
-                imageUrl: imageUrl
+                imageUrl: finalImageUrl
             });
             alert("Responder updated successfully!");
             setIsEditModalOpen(false);
