@@ -1,26 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
 import { useRouter } from "next/navigation";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import {
     doc,
-    getDoc,
+    onSnapshot,
     collection,
     query,
     where,
-    onSnapshot,
     orderBy,
-    limit,
     updateDoc,
     increment,
-    getDocs
 } from "firebase/firestore";
 import {
     ShieldAlert,
-    MapPin,
     Navigation,
     Clock,
     CheckCircle2,
@@ -35,88 +31,101 @@ export default function RoleDashboard() {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [latestAlert, setLatestAlert] = useState(null);
-    const [isAccepted, setIsAccepted] = useState(false);
 
     // History States
     const [showHistory, setShowHistory] = useState(false);
     const [historyLogs, setHistoryLogs] = useState([]);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
                 router.push("/login");
                 return;
             }
 
-            try {
-                const userDocRef = doc(db, "users", user.uid);
-                const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        if (data.role !== "responder") {
-                            router.push("/dashboard");
-                        } else {
-                            setUserData({ id: user.uid, ...data });
-                            setLoading(false);
-                        }
+            // 1. Real-time listener para sa responder data
+            const userDocRef = doc(db, "users", user.uid);
+            const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.role !== "responder") {
+                        router.push("/dashboard");
+                    } else {
+                        setUserData({ id: user.uid, ...data });
+                        setLoading(false);
                     }
-                });
+                }
+            });
 
-                // Real-time listener para sa Alerts at History
-                const chatsQuery = query(
-                    collection(db, "chats"),
-                    where("participants", "array-contains", user.uid),
-                    orderBy("updatedAt", "desc")
-                );
+            // 2. Real-time listener para sa Alerts
+            const chatsQuery = query(
+                collection(db, "chats"),
+                where("participants", "array-contains", user.uid),
+                orderBy("updatedAt", "desc")
+            );
 
-                const unsubscribeAlerts = onSnapshot(chatsQuery, (snapshot) => {
-                    if (!snapshot.empty) {
-                        const allDocs = snapshot.docs.map(doc => ({
+            const unsubscribeAlerts = onSnapshot(chatsQuery, (snapshot) => {
+                if (!snapshot.empty) {
+                    const allDocs = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
                             id: doc.id,
-                            ...doc.data(),
-                            time: doc.data().updatedAt?.toDate() || new Date()
-                        }));
+                            ...data,
+                            time: data.updatedAt?.toDate() || new Date()
+                        };
+                    });
 
-                        // Kunin ang pinakabago para sa Alert Panel
-                        const newest = allDocs[0];
+                    setHistoryLogs(allDocs);
+
+                    const newestChat = allDocs[0];
+
+                    // Gagawa tayo ng unique key base sa message ID at content para ma-detect kung "nabasa" na
+                    const alertStorageKey = `accepted_alert_${user.uid}`;
+                    const currentAlertValue = `${newestChat.id}_${newestChat.lastMessage}`;
+
+                    const alreadyAccepted = localStorage.getItem(alertStorageKey);
+
+                    // LALABAS LANG ANG ALERT KUNG:
+                    // Ang combination ng Chat ID + Last Message ay hindi pa nasa localStorage
+                    if (alreadyAccepted !== currentAlertValue) {
                         setLatestAlert({
-                            id: newest.id,
-                            userName: newest.citizenName || "Unknown Citizen",
-                            message: newest.lastMessage || "Sent an alert",
-                            time: newest.time,
-                            type: "Incoming Message / Alert"
+                            ...newestChat,
+                            storageValue: currentAlertValue
                         });
-
-                        // I-reset ang accepted state kapag may bagong message ID
-                        // (Optional: base sa business logic mo kung gusto mo mag-reset sa bawat bagong chat)
-                        setIsAccepted(false);
-
-                        // I-set ang lahat para sa History Logs
-                        setHistoryLogs(allDocs);
+                    } else {
+                        setLatestAlert(null);
                     }
-                });
+                } else {
+                    setLatestAlert(null);
+                }
+            });
 
-                return () => {
-                    unsubscribeUser();
-                    unsubscribeAlerts();
-                };
-            } catch (error) {
-                console.error("Security check error:", error);
-                router.push("/login");
-            }
+            return () => {
+                unsubscribeUser();
+                unsubscribeAlerts();
+            };
         });
 
-        return () => unsubscribe();
+        return () => unsubscribeAuth();
     }, [router]);
 
     const handleAccept = async () => {
         if (!userData || !latestAlert) return;
+
         try {
+            // 1. I-update ang completed responses sa Firestore
             const userRef = doc(db, "users", userData.id);
             await updateDoc(userRef, {
                 completedResponses: increment(1)
             });
-            setIsAccepted(true);
+
+            // 2. I-save sa localStorage na "Accepted" na itong specific message na ito
+            // Gagamitin natin ang storageValue na naset natin sa useEffect
+            localStorage.setItem(`accepted_alert_${userData.id}`, latestAlert.storageValue);
+
+            // 3. Agad na itago ang alert sa UI
+            setLatestAlert(null);
+
         } catch (error) {
             console.error("Accept error:", error);
         }
@@ -150,7 +159,7 @@ export default function RoleDashboard() {
                     <h1 className="text-xl text-gray-800 tracking-tight font-normal">Dashboard</h1>
                     <div className="flex items-center gap-4">
                         <div className="text-right">
-                            <p className="text-xs font-bold text-gray-800">{userData?.name || "Responder Unit"}</p>
+                            <p className="text-xs font-bold text-gray-800 uppercase tracking-widest">{userData?.name || "Responder Unit"}</p>
                         </div>
                     </div>
                 </div>
@@ -160,7 +169,7 @@ export default function RoleDashboard() {
                     <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 flex items-center justify-between transition-transform hover:scale-[1.02]">
                         <div>
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Emergencies</p>
-                            <h3 className="text-2xl font-black text-gray-800 mt-1">{(latestAlert && !isAccepted) ? "1" : "0"}</h3>
+                            <h3 className="text-2xl font-black text-gray-800 mt-1">{latestAlert ? "1" : "0"}</h3>
                         </div>
                         <ShieldAlert size={28} className="text-red-500" />
                     </div>
@@ -185,9 +194,9 @@ export default function RoleDashboard() {
                     <div className="lg:col-span-5">
                         <div className="bg-[#1E1E2D] p-8 rounded-[20px] shadow-2xl text-white border border-white/5 relative overflow-hidden h-full">
                             <div className="flex items-center gap-3 mb-8">
-                                <div className={`w-2 h-2 ${(latestAlert && !isAccepted) ? 'bg-red-500 animate-ping' : 'bg-gray-500'} rounded-full`}></div>
-                                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${(latestAlert && !isAccepted) ? 'text-red-400' : 'text-gray-500'}`}>
-                                    {(latestAlert && !isAccepted) ? "Incoming SMS / Alert" : "No Active Alerts"}
+                                <div className={`w-2 h-2 ${latestAlert ? 'bg-red-500 animate-ping' : 'bg-gray-500'} rounded-full`}></div>
+                                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${latestAlert ? 'text-red-400' : 'text-gray-500'}`}>
+                                    {latestAlert ? "Incoming SMS / Alert" : "No Active Alerts"}
                                 </p>
                             </div>
 
@@ -195,24 +204,26 @@ export default function RoleDashboard() {
                                 <div>
                                     <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Citizen Name</p>
                                     <p className="font-bold text-lg text-gray-100">
-                                        {(latestAlert && !isAccepted) ? latestAlert.userName : "Waiting for alert..."}
+                                        {latestAlert ? (latestAlert.citizenName || "Unknown Citizen") : "Waiting for new report..."}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Message Content</p>
                                     <p className="font-black text-sm text-blue-400 uppercase tracking-widest leading-relaxed">
-                                        {(latestAlert && !isAccepted) ? latestAlert.message : "--"}
+                                        {latestAlert ? latestAlert.lastMessage : "System is idle. All reports clear."}
                                     </p>
                                 </div>
-                                <div className="flex items-start gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
-                                    <MessageSquare size={18} className="mt-1 text-gray-400" />
-                                    <div>
-                                        <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Received At</p>
-                                        <p className="font-medium text-xs text-gray-300 leading-relaxed mt-1 italic">
-                                            {(latestAlert && !isAccepted) ? latestAlert.time.toLocaleTimeString() : "No data..."}
-                                        </p>
+                                {latestAlert && (
+                                    <div className="flex items-start gap-3 bg-white/5 p-4 rounded-xl border border-white/10">
+                                        <MessageSquare size={18} className="mt-1 text-gray-400" />
+                                        <div>
+                                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Received At</p>
+                                            <p className="font-medium text-xs text-gray-300 leading-relaxed mt-1 italic">
+                                                {latestAlert.time.toLocaleTimeString()}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             <div className="flex gap-3">
@@ -224,7 +235,7 @@ export default function RoleDashboard() {
                                 </button>
                                 <button
                                     onClick={handleAccept}
-                                    disabled={!latestAlert || isAccepted}
+                                    disabled={!latestAlert}
                                     className="flex-[2] py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-800 disabled:text-gray-500 rounded-xl font-black text-[10px] transition-all active:scale-95 shadow-lg shadow-blue-900/40 uppercase tracking-[0.2em] flex items-center justify-center gap-2"
                                 >
                                     <Check size={14} /> Accept & Complete
@@ -251,7 +262,6 @@ export default function RoleDashboard() {
                             </div>
 
                             <div className="space-y-4">
-                                {/* Preview ng mga huling activity */}
                                 {historyLogs.slice(0, 3).map((log) => (
                                     <div key={log.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                                         <div className="flex items-center gap-3">
@@ -259,7 +269,7 @@ export default function RoleDashboard() {
                                                 <MessageSquare size={14} className="text-blue-600" />
                                             </div>
                                             <div>
-                                                <p className="text-xs font-bold text-gray-800">Alert from {log.citizenName}</p>
+                                                <p className="text-xs font-bold text-gray-800">Alert from {log.citizenName || "Citizen"}</p>
                                                 <p className="text-[10px] text-gray-500">{log.time.toLocaleString()}</p>
                                             </div>
                                         </div>
@@ -273,51 +283,33 @@ export default function RoleDashboard() {
                     </div>
                 </div>
 
-                {/* HISTORY MODAL / OVERLAY */}
+                {/* History Modal */}
                 {showHistory && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                        <div className="bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden">
                             <div className="flex items-center justify-between p-6 border-b border-gray-100">
                                 <div className="flex items-center gap-2">
                                     <History className="text-blue-600" size={20} />
                                     <h2 className="text-lg font-bold text-gray-800 uppercase tracking-tight">Call & Message History</h2>
                                 </div>
-                                <button
-                                    onClick={() => setShowHistory(false)}
-                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
-                                >
-                                    <X size={20} />
-                                </button>
+                                <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400"><X size={20} /></button>
                             </div>
-
                             <div className="max-h-[500px] overflow-y-auto p-6 space-y-4">
-                                {historyLogs.length > 0 ? (
-                                    historyLogs.map((log) => (
-                                        <div key={log.id} className="group p-4 bg-white border border-gray-100 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                                    <MessageSquare size={18} />
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-gray-800">{log.citizenName || "Unknown Citizen"}</p>
-                                                    <p className="text-[11px] text-gray-500 line-clamp-1">{log.lastMessage}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase">{log.time.toLocaleDateString()}</p>
-                                                <p className="text-[10px] text-gray-400 italic">{log.time.toLocaleTimeString()}</p>
+                                {historyLogs.map((log) => (
+                                    <div key={log.id} className="p-4 bg-white border border-gray-100 rounded-2xl flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><MessageSquare size={18} /></div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-800">{log.citizenName || "Unknown Citizen"}</p>
+                                                <p className="text-[11px] text-gray-500 line-clamp-1">{log.lastMessage}</p>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-20">
-                                        <p className="text-gray-400 italic">No history available yet.</p>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase">{log.time.toLocaleDateString()}</p>
+                                            <p className="text-[10px] text-gray-400 italic">{log.time.toLocaleTimeString()}</p>
+                                        </div>
                                     </div>
-                                )}
-                            </div>
-
-                            <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">End of Logs</p>
+                                ))}
                             </div>
                         </div>
                     </div>
