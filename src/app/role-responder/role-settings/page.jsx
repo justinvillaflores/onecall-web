@@ -98,7 +98,6 @@ export default function RoleSettings() {
 
             <main className="flex-1 ml-[280px] flex flex-col h-full overflow-hidden">
 
-                {/* HEADER */}
                 <div className="flex justify-between items-center m-8 mb-4 bg-white p-3 px-8 rounded-[10px] shadow-sm border border-gray-100">
                     <div className="flex items-center gap-3">
                         <h1 className="text-xl text-gray-800 tracking-tight font-normal">Settings</h1>
@@ -116,7 +115,6 @@ export default function RoleSettings() {
                 <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
                     <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
 
-                        {/* LEFT: NAVIGATION TABS */}
                         <div className="w-full md:w-64 space-y-2">
                             <button
                                 onClick={() => setActiveTab("profile")}
@@ -138,14 +136,11 @@ export default function RoleSettings() {
                             </button>
                         </div>
 
-                        {/* RIGHT: CONTENT AREA */}
                         <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-12">
 
-                            {/* PROFILE TAB */}
                             {activeTab === "profile" && (
                                 <form onSubmit={handleUpdateProfile} className="p-8 space-y-8 animate-in fade-in duration-500">
 
-                                    {/* TINANGGAL ANG 'pb-6 border-b border-gray-50' PARA MAWALA ANG GUHIT */}
                                     <div className="flex items-center gap-4">
                                         <div className="relative">
                                             <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden text-blue-600 text-lg font-black shadow-inner border border-white">
@@ -199,7 +194,6 @@ export default function RoleSettings() {
                                 </form>
                             )}
 
-                            {/* SECURITY TAB */}
                             {activeTab === "security" && (
                                 <div className="p-8 space-y-8 animate-in fade-in duration-500">
                                     <div className="space-y-1">

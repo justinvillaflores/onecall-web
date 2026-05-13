@@ -20,14 +20,12 @@ export default function DashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
 
-    // REALTIME STATES
     const [totalCitizens, setTotalCitizens] = useState(0);
     const [totalResponders, setTotalResponders] = useState(0);
     const [totalReports, setTotalReports] = useState(0);
     const [totalFeedback, setTotalFeedback] = useState(0);
 
     useEffect(() => {
-        // I-initialize ang variables para sa cleanup
         let unsubscribeCitizens;
         let unsubscribeResponders;
         let unsubscribeReports;
@@ -46,27 +44,22 @@ export default function DashboardPage() {
                     return;
                 }
 
-                // DITO LANG MAGSISIMULA ANG MGA LISTENERS PAGKATAPOS NG AUTH CHECK
                 setLoading(false);
 
-                // 1. Listen for Citizens
                 const qCitizens = query(collection(db, "users"), where("role", "==", "citizen"));
                 unsubscribeCitizens = onSnapshot(qCitizens, (snapshot) => {
                     setTotalCitizens(snapshot.size);
                 });
 
-                // 2. Listen for Responders
                 const qResponders = query(collection(db, "users"), where("role", "==", "responder"));
                 unsubscribeResponders = onSnapshot(qResponders, (snapshot) => {
                     setTotalResponders(snapshot.size);
                 });
 
-                // 3. Listen for Total Reports
                 unsubscribeReports = onSnapshot(collection(db, "reports"), (snapshot) => {
                     setTotalReports(snapshot.size);
                 });
 
-                // 4. Listen for Feedback
                 unsubscribeFeedback = onSnapshot(collection(db, "feedback"), (snapshot) => {
                     setTotalFeedback(snapshot.size);
                 });

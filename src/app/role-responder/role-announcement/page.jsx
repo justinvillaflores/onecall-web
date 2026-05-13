@@ -7,7 +7,6 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, query, orderBy, doc, getDoc } from "firebase/firestore";
 
-// DITO ANG FIX: Dinagdag ang Megaphone sa imports
 import {
     Clock,
     MapPin,
@@ -38,7 +37,6 @@ export default function RoleAnnouncement() {
             }
         });
 
-        // Real-time listener para sa mga post ni admin
         const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
         const unsubscribeAnn = onSnapshot(q, (snapshot) => {
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -66,7 +64,6 @@ export default function RoleAnnouncement() {
             <Sidebar />
 
             <main className="flex-1 ml-[280px] p-8">
-                {/* HEADER */}
                 <div className="flex justify-between items-center mb-8 bg-white p-4 px-8 rounded-xl shadow-sm border border-gray-100">
                     <h1 className="text-xl font-bold text-gray-800">Public Safety Announcements</h1>
                     <div className="flex items-center gap-3 text-right">
@@ -78,7 +75,6 @@ export default function RoleAnnouncement() {
                     </div>
                 </div>
 
-                {/* FILTERS */}
                 <div className="flex gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
                     {["All", "Emergency", "Important", "General"].map((category) => (
                         <button
@@ -95,12 +91,10 @@ export default function RoleAnnouncement() {
                     ))}
                 </div>
 
-                {/* ANNOUNCEMENT GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredData.length > 0 ? filteredData.map((item) => (
                         <div key={item.id} className="bg-white rounded-[24px] overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-xl transition-all duration-300 group">
 
-                            {/* IMAGE SECTION */}
                             <div className="h-48 w-full relative overflow-hidden">
                                 {item.imageUrl ? (
                                     <img
@@ -114,7 +108,6 @@ export default function RoleAnnouncement() {
                                     </div>
                                 )}
 
-                                {/* FLOATING BADGE */}
                                 <div className={`absolute top-4 left-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-sm ${
                                     item.type === 'Emergency' ? 'bg-red-600' : item.type === 'Important' ? 'bg-orange-500' : 'bg-blue-600'
                                 }`}>
@@ -134,7 +127,6 @@ export default function RoleAnnouncement() {
                                 </p>
 
                                 <div className="mt-auto space-y-4">
-                                    {/* META INFO */}
                                     <div className="flex items-center justify-between text-[11px] text-gray-400 font-bold border-t border-gray-50 pt-4">
                                         <div className="flex items-center gap-3">
                                             <span className="flex items-center gap-1.5">
@@ -148,7 +140,6 @@ export default function RoleAnnouncement() {
                                         </div>
                                     </div>
 
-                                    {/* ACTION BUTTON */}
                                     <button className="w-full py-3 bg-gray-50 hover:bg-blue-600 hover:text-white text-blue-600 rounded-xl text-xs font-bold transition-all duration-300 border border-gray-100 hover:border-blue-600 shadow-sm">
                                         View Full Advisory
                                     </button>
@@ -156,7 +147,6 @@ export default function RoleAnnouncement() {
                             </div>
                         </div>
                     )) : (
-                        /* EMPTY STATE */
                         <div className="col-span-full py-24 text-center bg-white rounded-[30px] border border-dashed border-gray-200">
                             <div className="bg-gray-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Megaphone size={32} className="text-gray-300" />

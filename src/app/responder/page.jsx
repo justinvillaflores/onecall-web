@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Sidebar from "@/components/Sidebar";
 import { useRouter } from "next/navigation";
 import { signOut, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db, storage } from "@/lib/firebase"; // Siguraduhing na-export ang 'storage' sa firebase config mo
+import { auth, db, storage } from "@/lib/firebase";
 import {
     doc,
     setDoc,
@@ -33,23 +33,20 @@ export default function ResponderPage() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
 
-    // MGA MODAL STATES
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-    // MGA STATES PARA SA INPUTS AT DATA
     const [serviceName, setServiceName] = useState("");
     const [email, setEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [password, setPassword] = useState("");
     const [imageUrl, setImageUrl] = useState("");
-    const [imageFile, setImageFile] = useState(null); // Bagong state para sa file object
+    const [imageFile, setImageFile] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [selectedResponder, setSelectedResponder] = useState(null);
 
-    // STATE PARA SA TABLE DATA
     const [responders, setResponders] = useState([]);
 
     useEffect(() => {
@@ -85,17 +82,16 @@ export default function ResponderPage() {
         const file = e.target.files[0];
         if (!file) return;
 
-        setImageFile(file); // I-save ang actual file para sa upload
+        setImageFile(file);
         const reader = new FileReader();
         reader.onloadend = () => {
-            setImageUrl(reader.result); // Para sa preview lang
+            setImageUrl(reader.result);
         };
         reader.readAsDataURL(file);
     };
 
-    // Helper function para sa pag-upload sa Firebase Storage
     const uploadImage = async (userId) => {
-        if (!imageFile) return imageUrl; // Kung walang bagong file, ibalik ang dating URL
+        if (!imageFile) return imageUrl;
 
         const storageRef = ref(storage, `responder_logos/${userId}`);
         const snapshot = await uploadBytes(storageRef, imageFile);
@@ -109,7 +105,6 @@ export default function ResponderPage() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // I-upload muna ang image bago i-save ang doc
             const finalImageUrl = await uploadImage(user.uid);
 
             await setDoc(doc(db, "users", user.uid), {
@@ -138,7 +133,7 @@ export default function ResponderPage() {
         setEmail(responder.email);
         setPhoneNumber(responder.phoneNumber || "");
         setImageUrl(responder.imageUrl || "");
-        setImageFile(null); // Reset file input
+        setImageFile(null);
         setIsEditModalOpen(true);
     };
 
@@ -148,7 +143,6 @@ export default function ResponderPage() {
 
         setLoading(true);
         try {
-            // I-upload ang bagong image kung meron
             const finalImageUrl = await uploadImage(selectedResponder.id);
 
             const docRef = doc(db, "users", selectedResponder.id);
@@ -283,7 +277,6 @@ export default function ResponderPage() {
                 </div>
             </main>
 
-            {/* MODAL PARA SA ADD AT EDIT */}
             {mounted && (isModalOpen || isEditModalOpen) &&
                 createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -315,7 +308,6 @@ export default function ResponderPage() {
 
                             <form className="space-y-4" onSubmit={isEditModalOpen ? handleUpdateResponder : handleAddResponder}>
 
-                                {/* Logo Upload Field (Optional) */}
                                 <div>
                                     <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 ml-1">
                                         Service Logo (Optional)
@@ -410,7 +402,6 @@ export default function ResponderPage() {
                 )
             }
 
-            {/* DELETE MODAL */}
             {mounted && isDeleteModalOpen &&
                 createPortal(
                     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">

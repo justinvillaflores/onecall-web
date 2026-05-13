@@ -36,7 +36,6 @@ function MapLogic({ position }) {
     return null;
 }
 
-// Helper: Last Seen logic
 const formatLastSeen = (timestamp) => {
     if (!timestamp) return "Unknown";
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -57,10 +56,9 @@ export default function RoleMap() {
     const [geoIcon, setGeoIcon] = useState(null);
     const [citizenIcon, setCitizenIcon] = useState(null);
 
-    const [currentPos, setCurrentPos] = useState([14.8348, 120.2827]); // Default: Olongapo City
+    const [currentPos, setCurrentPos] = useState([14.8348, 120.2827]);
     const [activeCitizens, setActiveCitizens] = useState([]);
 
-    // 1. Mount effect & Icon Setup
     useEffect(() => {
         setIsMounted(true);
 
@@ -77,7 +75,6 @@ export default function RoleMap() {
         }));
     }, []);
 
-    // 2. Auth & GPS Tracking
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -116,7 +113,6 @@ export default function RoleMap() {
         };
     }, [router]);
 
-    // 3. Real-time Citizen Monitoring
     useEffect(() => {
         if (loading || !isMounted) return;
 
@@ -142,7 +138,6 @@ export default function RoleMap() {
             <Sidebar handleLogout={() => signOut(auth)} />
             <main className="flex-1 ml-[280px] p-8 h-screen flex flex-col overflow-hidden">
 
-                {/* HEADER */}
                 <div className="flex justify-between items-center mb-6 bg-white p-4 px-8 rounded-xl shadow-sm border border-gray-100">
                     <div>
                         <h1 className="text-lg font-bold text-gray-800">Live Incident Map</h1>
@@ -155,7 +150,6 @@ export default function RoleMap() {
                     </div>
                 </div>
 
-                {/* MAP CONTAINER */}
                 <div className="flex-1 bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden relative">
                     <MapContainer
                         center={currentPos}
@@ -166,14 +160,12 @@ export default function RoleMap() {
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         <MapLogic position={currentPos} />
 
-                        {/* Responder Marker */}
                         {geoIcon && (
                             <Marker position={currentPos} icon={geoIcon}>
                                 <Popup><b>You (Responder)</b></Popup>
                             </Marker>
                         )}
 
-                        {/* Citizens Markers */}
                         {citizenIcon && activeCitizens.map((citizen) => (
                             <Marker
                                 key={citizen.id}
@@ -199,7 +191,6 @@ export default function RoleMap() {
                         ))}
                     </MapContainer>
 
-                    {/* LEGEND */}
                     <div className="absolute top-6 right-6 z-[500] bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-lg border border-gray-100">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>

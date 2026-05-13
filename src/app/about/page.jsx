@@ -1,7 +1,6 @@
 export default function AboutPage() {
     return (
         <div className="relative min-h-screen bg-white">
-            {/* Background Glow Effect */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-gradient-to-b from-blue-50 to-transparent -z-10" />
 
             <section className="container mx-auto px-6 py-20">
@@ -17,7 +16,6 @@ export default function AboutPage() {
                     </p>
                 </div>
 
-                {/* Info Cards Grid */}
                 <div className="grid md:grid-cols-3 gap-8">
                     <div className="p-10 bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 transition hover:-translate-y-2">
                         <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-3xl mb-8"></div>

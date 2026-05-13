@@ -19,7 +19,6 @@ export default function RootLayout({ children }) {
         return () => unsub();
     }, []);
 
-    // 🔥 WAIT FOR AUTH TO LOAD (Mas maayos na loading para sa OneCall)
     if (user === undefined) {
         return (
             <html lang="en">
@@ -33,7 +32,6 @@ export default function RootLayout({ children }) {
         );
     }
 
-    // LISTAHAN NG PAGES KUNG SAAN DAPAT LAGING KITA ANG HEADER
     const publicPages = ["/", "/about", "/contact", "/login"];
     const showHeader = publicPages.includes(pathname);
 
@@ -41,7 +39,6 @@ export default function RootLayout({ children }) {
         <html lang="en">
         <body className="min-h-screen flex flex-col bg-white">
 
-        {/* HEADER: Ngayon ay laging "Sign in" ang button */}
         {showHeader && (
             <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
                 <nav className="container mx-auto flex justify-between items-center p-4 lg:px-8">
@@ -61,7 +58,6 @@ export default function RootLayout({ children }) {
                         <li><Link href="/contact" className="hover:text-blue-600 transition">Contact</Link></li>
                     </ul>
 
-                    {/* Laging Sign in button na tumuturo sa /login */}
                     <Link
                         href="/login"
                         className="bg-slate-900 hover:bg-blue-600 text-white px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg shadow-slate-200"

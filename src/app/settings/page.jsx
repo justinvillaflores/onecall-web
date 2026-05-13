@@ -126,7 +126,6 @@ export default function AdminSettings() {
             <Sidebar handleLogout={handleLogout} />
 
             <main className="flex-1 ml-[280px] flex flex-col h-full overflow-hidden">
-                {/* HEADER */}
                 <header className="flex justify-between items-center p-8 bg-transparent border-b border-slate-200">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-[#2D3FE2] rounded-2xl shadow-lg shadow-blue-200">
@@ -147,7 +146,6 @@ export default function AdminSettings() {
                 <div className="flex-1 overflow-y-auto px-8 py-10">
                     <div className="max-w-4xl mx-auto">
 
-                        {/* TABS - Updated gap-10 to gap-16 for more spacing */}
                         <div className="flex items-center gap-16 border-b border-slate-200 mb-10">
                             {["profile", "security"].map((tab) => (
                                 <button
@@ -163,7 +161,6 @@ export default function AdminSettings() {
                             ))}
                         </div>
 
-                        {/* CONTENT AREA */}
                         <div className="space-y-8">
                             {activeTab === "profile" && (
                                 <div className="animate-in slide-in-from-bottom-2 duration-500">

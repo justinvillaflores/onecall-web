@@ -77,7 +77,6 @@ export default function Sidebar() {
         <>
             <aside className="w-[280px] flex flex-col h-screen fixed left-0 top-0 z-[50] shadow-2xl overflow-hidden" style={{ backgroundColor: "#2D3FE2" }}>
 
-                {/* --- DYNAMIC LOGO SECTION --- */}
                 <div className="pt-20 pb-6 w-full flex flex-col items-center justify-center">
                     <div
                         className="w-20 h-20 flex items-center justify-center shadow-2xl border border-white/30"
@@ -112,12 +111,10 @@ export default function Sidebar() {
                     </div>
                 </div>
 
-                {/* --- ANG DIVIDER LINE (TAAS NG DASHBOARD) --- */}
                 <div className="px-10">
                     <div className="h-[1px] bg-white/20 w-full mb-3 mt-8"></div>
                 </div>
 
-                {/* NAVIGATION MENU */}
                 <nav className="flex-1 px-5 space-y-3 overflow-y-auto no-scrollbar">
                     {menuItems.map((item) => {
                         const isActive = pathname === item.path;
@@ -140,7 +137,6 @@ export default function Sidebar() {
                     })}
                 </nav>
 
-                {/* BOTTOM SECTION */}
                 <div className="px-5 pb-10">
                     <div className="h-[1px] bg-white/20 w-full mb-6"></div>
                     <div className="space-y-3">
@@ -163,7 +159,6 @@ export default function Sidebar() {
                 </div>
             </aside>
 
-            {/* LOGOUT MODAL */}
             {showLogoutConfirm && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-smtransition-all duration-300">
                     <div className="bg-white w-[340px] rounded-2xl p-6 shadow-2xl text-center relative animate-in fade-in zoom-in duration-200">

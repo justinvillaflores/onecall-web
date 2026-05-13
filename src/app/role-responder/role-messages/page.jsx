@@ -17,7 +17,6 @@ import {
     where
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-// INAYOS NA IMPORT: Dinagdag ang MessageSquare
 import { Search, Send, User, MessageSquare } from "lucide-react";
 
 export default function RoleMessages() {
@@ -32,7 +31,6 @@ export default function RoleMessages() {
     const [search, setSearch] = useState("");
     const scrollRef = useRef(null);
 
-    // SECURITY CHECK & AUTHENTICATION
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -60,31 +58,26 @@ export default function RoleMessages() {
         return () => unsubscribe();
     }, [router]);
 
-    // FETCH ACTIVE CHATS
     useEffect(() => {
         if (!userData?.id) return;
 
-        // Query chats where current responder is a participant
         const q = query(
             collection(db, "chats"),
             where("participants", "array-contains", userData.id)
-            // Inalis muna ang orderBy("updatedAt") para iwas sa index errors sa simula
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Manual sorting para hindi na kailangan ng complex index sa Firestore agad
+
             const sortedList = list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
             setChatList(sortedList);
         }, (error) => {
             console.error("Error listening to chats:", error);
-            // Kung may permission-denied pa rin dito, check Firestore Rules again.
         });
 
         return () => unsubscribe();
     }, [userData]);
 
-    // FETCH MESSAGES
     useEffect(() => {
         if (!selectedChat) return;
 
@@ -151,7 +144,6 @@ export default function RoleMessages() {
             <Sidebar handleLogout={handleLogout} />
 
             <main className="flex-1 ml-[280px] p-8 flex flex-col h-screen">
-                {/* HEADER */}
                 <div className="flex justify-between items-center mb-6 bg-white p-4 px-8 rounded-xl shadow-sm border border-gray-100">
                     <h1 className="text-lg text-gray-800 font-semibold">Terminal Messages</h1>
                     <p className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase">
@@ -160,7 +152,6 @@ export default function RoleMessages() {
                 </div>
 
                 <div className="flex-1 flex gap-6 overflow-hidden h-[calc(100vh-140px)] pb-4">
-                    {/* INBOX LIST */}
                     <div className="w-[380px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col shrink-0 overflow-hidden">
                         <div className="p-4 border-b border-gray-50 shrink-0">
                             <div className="relative">
@@ -198,7 +189,6 @@ export default function RoleMessages() {
                         </div>
                     </div>
 
-                    {/* CHAT AREA */}
                     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
                         {selectedChat ? (
                             <>

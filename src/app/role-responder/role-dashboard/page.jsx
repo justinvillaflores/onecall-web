@@ -32,7 +32,6 @@ export default function RoleDashboard() {
     const [loading, setLoading] = useState(true);
     const [latestAlert, setLatestAlert] = useState(null);
 
-    // History States
     const [showHistory, setShowHistory] = useState(false);
     const [historyLogs, setHistoryLogs] = useState([]);
 
@@ -43,7 +42,6 @@ export default function RoleDashboard() {
                 return;
             }
 
-            // 1. Real-time listener para sa responder data
             const userDocRef = doc(db, "users", user.uid);
             const unsubscribeUser = onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -57,7 +55,6 @@ export default function RoleDashboard() {
                 }
             });
 
-            // 2. Real-time listener para sa Alerts
             const chatsQuery = query(
                 collection(db, "chats"),
                 where("participants", "array-contains", user.uid),
@@ -79,7 +76,6 @@ export default function RoleDashboard() {
 
                     const newestChat = allDocs[0];
 
-                    // Gagawa tayo ng unique key base sa message ID at content para ma-detect kung "nabasa" na
                     const alertStorageKey = `accepted_alert_${user.uid}`;
                     const currentAlertValue = `${newestChat.id}_${newestChat.lastMessage}`;
 
@@ -113,17 +109,13 @@ export default function RoleDashboard() {
         if (!userData || !latestAlert) return;
 
         try {
-            // 1. I-update ang completed responses sa Firestore
             const userRef = doc(db, "users", userData.id);
             await updateDoc(userRef, {
                 completedResponses: increment(1)
             });
 
-            // 2. I-save sa localStorage na "Accepted" na itong specific message na ito
-            // Gagamitin natin ang storageValue na naset natin sa useEffect
             localStorage.setItem(`accepted_alert_${userData.id}`, latestAlert.storageValue);
 
-            // 3. Agad na itago ang alert sa UI
             setLatestAlert(null);
 
         } catch (error) {
@@ -164,7 +156,6 @@ export default function RoleDashboard() {
                     </div>
                 </div>
 
-                {/* Stat Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 flex items-center justify-between transition-transform hover:scale-[1.02]">
                         <div>
@@ -245,7 +236,6 @@ export default function RoleDashboard() {
                         </div>
                     </div>
 
-                    {/* Activity Logs Section */}
                     <div className="lg:col-span-7">
                         <div className="bg-white p-8 rounded-[20px] shadow-sm border border-gray-100 h-full">
                             <div className="flex items-center justify-between mb-6">
@@ -283,7 +273,6 @@ export default function RoleDashboard() {
                     </div>
                 </div>
 
-                {/* History Modal */}
                 {showHistory && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                         <div className="bg-white w-full max-w-2xl rounded-[24px] shadow-2xl overflow-hidden">

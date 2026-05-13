@@ -15,7 +15,7 @@ export default function UsersPage() {
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        let unsubscribeUsers; // I-declare dito para ma-cleanup mamaya
+        let unsubscribeUsers;
 
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
@@ -23,7 +23,6 @@ export default function UsersPage() {
                 return;
             }
 
-            // ✅ FIXED: Dito lang dapat mag-start ang listener kapag confirm na may user
             const q = query(collection(db, "users"), where("role", "==", "citizen"));
 
             unsubscribeUsers = onSnapshot(q, (snapshot) => {
@@ -34,7 +33,6 @@ export default function UsersPage() {
                 setUsers(usersData);
                 setLoading(false);
             }, (error) => {
-                // Catch para hindi mag-crash ang app kung may permission issue
                 console.error("Firestore listener error:", error);
                 setLoading(false);
             });
@@ -42,7 +40,7 @@ export default function UsersPage() {
 
         return () => {
             unsubscribeAuth();
-            if (unsubscribeUsers) unsubscribeUsers(); // Cleanup ang listener
+            if (unsubscribeUsers) unsubscribeUsers();
         };
     }, [router]);
 
@@ -51,7 +49,6 @@ export default function UsersPage() {
         router.push("/login");
     };
 
-    // Filter logic para sa search bar
     const filteredUsers = users.filter(user =>
         user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,7 +61,6 @@ export default function UsersPage() {
 
             <main className="flex-1 ml-[280px] p-8">
 
-                {/* DASHBOARD STYLE HEADER */}
                 <div className="flex justify-between items-center mb-8 bg-white p-3 px-6 rounded-[10px] shadow-sm">
                     <h1 className="text-xl text-gray-800 tracking-tight font-normal">
                         Users
@@ -72,7 +68,6 @@ export default function UsersPage() {
                     <UserCircle size={40} strokeWidth={1} className="text-gray-300 cursor-pointer" />
                 </div>
 
-                {/* SEARCH BAR */}
                 <div className="flex items-center mb-6">
                     <div className="relative w-full max-w-[350px]">
                         <Search
@@ -89,7 +84,6 @@ export default function UsersPage() {
                     </div>
                 </div>
 
-                {/* DATA TABLE */}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                     <table className="w-full text-left">
                         <thead>

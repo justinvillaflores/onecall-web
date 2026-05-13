@@ -2,7 +2,6 @@ export default function ContactPage() {
     return (
         <div className="bg-white min-h-screen py-20 px-6">
             <div className="container mx-auto max-w-6xl">
-                {/* Header Section */}
                 <div className="text-center mb-16 space-y-4">
                     <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
                         Contact <span className="text-blue-600">Us</span>
@@ -11,10 +10,8 @@ export default function ContactPage() {
                     <p className="text-slate-500 font-medium pt-2">Have questions? We are here to help you.</p>
                 </div>
 
-                {/* Main Layout Container */}
                 <div className="bg-slate-50 rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col lg:flex-row items-stretch">
 
-                    {/* LEFT SIDE: Contact Information */}
                     <div className="lg:w-1/2 p-10 md:p-16 bg-white border-r border-slate-100 flex flex-col justify-center">
                         <h3 className="text-4xl font-black text-slate-900 mb-4">Get In Touch</h3>
                         <div className="w-12 h-1 bg-blue-600 mb-12 rounded-full"></div>
@@ -46,7 +43,6 @@ export default function ContactPage() {
                         </div>
                     </div>
 
-                    {/* RIGHT SIDE: Message Form */}
                     <div className="lg:w-1/2 p-10 md:p-16 flex flex-col justify-center bg-slate-50/50">
                         <form className="space-y-5">
                             <div className="space-y-2">

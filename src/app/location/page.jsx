@@ -11,7 +11,6 @@ import { formatDistanceToNow } from "date-fns";
 
 import "leaflet/dist/leaflet.css";
 
-// Dynamic imports para maiwasan ang SSR errors sa Next.js
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), {
     ssr: false,
     loading: () => <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center">Loading City Map...</div>
@@ -27,7 +26,7 @@ export default function AdminLocationPage() {
     const [responderIcon, setResponderIcon] = useState(null);
     const [userIcon, setUserIcon] = useState(null);
     const [units, setUnits] = useState([]);
-    const [centerPos] = useState([14.8348, 120.2827]); // Sentro ng Olongapo City
+    const [centerPos] = useState([14.8348, 120.2827]);
 
     useEffect(() => {
         setIsMounted(true);
@@ -63,7 +62,6 @@ export default function AdminLocationPage() {
             const list = [];
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                // Siguraduhin na may coordinates bago i-render sa map
                 if (data.lastKnownLat && data.lastKnownLon) {
                     list.push({ id: doc.id, ...data });
                 }
@@ -95,7 +93,6 @@ export default function AdminLocationPage() {
             <Sidebar handleLogout={handleLogout} />
             <main className="flex-1 ml-[280px] p-6 h-screen flex flex-col overflow-hidden">
 
-                {/* HEADER */}
                 <div className="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center px-8">
                     <div>
                         <h1 className="font-bold text-gray-800 text-lg tracking-tight">City-Wide Live Monitoring</h1>
@@ -107,7 +104,6 @@ export default function AdminLocationPage() {
                     </div>
                 </div>
 
-                {/* MAP */}
                 <div className="flex-1 bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden relative">
                     <MapContainer center={centerPos} zoom={14} style={{ height: "100%", width: "100%", zIndex: 1 }}>
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -118,11 +114,9 @@ export default function AdminLocationPage() {
                                 position={[u.lastKnownLat, u.lastKnownLon]}
                                 icon={u.role === 'responder' ? responderIcon : userIcon}
                             >
-                                // PALITAN ANG BUONG RETURN NG ADMIN PAGE NG CODE NA ITO:
 
                                 <Popup>
                                     <div className="p-2 min-w-[200px] font-sans">
-                                        {/* Sinisigurado na kukunin ang username para sa citizen at name para sa responder */}
                                         <p className={`font-black text-sm mb-1 uppercase tracking-tight ${u.role === 'responder' ? 'text-red-600' : 'text-blue-600'}`}>
                                             {u.role === 'responder' ? (u.name || "Unknown Responder") : (u.username || "Unknown Citizen")}
                                         </p>
@@ -155,12 +149,12 @@ export default function AdminLocationPage() {
                                         <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center">
                                             <span className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">Last Sync</span>
                                             <span className="text-[9px] text-gray-500 font-medium italic">
-                {u.lastLocationUpdate
-                    ? (typeof u.lastLocationUpdate.toDate === 'function'
-                        ? formatDistanceToNow(u.lastLocationUpdate.toDate(), { addSuffix: true })
-                        : formatDistanceToNow(new Date(u.lastLocationUpdate), { addSuffix: true }))
-                    : 'Just now'}
-            </span>
+                                                {u.lastLocationUpdate
+                                                    ? (typeof u.lastLocationUpdate.toDate === 'function'
+                                                        ? formatDistanceToNow(u.lastLocationUpdate.toDate(), { addSuffix: true })
+                                                        : formatDistanceToNow(new Date(u.lastLocationUpdate), { addSuffix: true }))
+                                                    : 'Just now'}
+                                            </span>
                                         </div>
                                     </div>
                                 </Popup>
@@ -168,7 +162,6 @@ export default function AdminLocationPage() {
                         ))}
                     </MapContainer>
 
-                    {/* LEGEND */}
                     <div className="absolute bottom-6 right-6 z-[1000] bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-gray-100">
                         <p className="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest border-b pb-1">Legend</p>
                         <div className="space-y-2">

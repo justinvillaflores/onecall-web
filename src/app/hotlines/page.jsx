@@ -108,7 +108,6 @@ export default function HotlinesPage() {
         }
     };
 
-    // Binagong handleDelete function
     const handleDeleteClick = (id) => {
         setIdToDelete(id);
         setIsDeleteModalOpen(true);
@@ -156,7 +155,6 @@ export default function HotlinesPage() {
             <Sidebar handleLogout={handleLogout} />
 
             <main className="flex-1 ml-[280px] p-10">
-                {/* Header Section */}
                 <div className="flex justify-between items-center mb-8 bg-white p-6 px-8 rounded-2xl shadow-sm border border-slate-200">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Hotlines Management</h1>
@@ -170,9 +168,7 @@ export default function HotlinesPage() {
                     </div>
                 </div>
 
-                {/* Search and Add Section */}
                 <div className="flex items-center justify-between gap-4 mb-8">
-                    {/* Search Bar */}
                     <div className="relative flex-1 max-w-lg group">
                         <Search
                             size={18}
@@ -185,8 +181,8 @@ export default function HotlinesPage() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-lg outline-none
-            focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400
-            transition-all shadow-sm text-sm placeholder:text-slate-400"
+                            focus:ring-1 focus:ring-blue-500/20 focus:border-blue-400
+                            transition-all shadow-sm text-sm placeholder:text-slate-400"
                         />
                     </div>
 
@@ -194,15 +190,14 @@ export default function HotlinesPage() {
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold
-        shadow-md hover:bg-blue-700 flex items-center gap-2
-        transition-all active:scale-95 text-sm whitespace-nowrap"
+                                    shadow-md hover:bg-blue-700 flex items-center gap-2
+                                    transition-all active:scale-95 text-sm whitespace-nowrap"
                     >
                         <Plus size={18} strokeWidth={2} />
                         Add New Hotline
                     </button>
                 </div>
 
-                {/* Table Section */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     {loading ? (
                         <div className="p-20 flex flex-col items-center justify-center">
@@ -244,8 +239,8 @@ export default function HotlinesPage() {
                                                         )}
                                                     </div>
                                                     <span className="font-semibold text-slate-700 truncate max-w-[200px]">
-            {item.name}
-        </span>
+                                                        {item.name}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-4">
@@ -289,7 +284,6 @@ export default function HotlinesPage() {
                 </div>
             </main>
 
-            {/* ADD/EDIT MODAL */}
             {mounted && isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div
@@ -410,39 +404,32 @@ export default function HotlinesPage() {
                 document.body
             )}
 
-            {/* DELETE CONFIRMATION MODAL */}
             {mounted && isDeleteModalOpen && createPortal(
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
 
-                    {/* BACKDROP (NO BLUR) */}
                     <div
                         className="absolute inset-0 bg-black/40"
                         onClick={cancelDelete}
                     />
 
-                    {/* MODAL (WHITE SMOKE STYLE) */}
                     <div className="relative w-[280px] rounded-2xl p-5
                         bg-white
                         border border-slate-200
                         shadow-xl">
 
-                        {/* ICON */}
                         <div className="flex justify-center mb-3">
                             <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
                             </div>
                         </div>
 
-                        {/* TITLE */}
                         <h2 className="text-base font-bold text-slate-800 text-center">
                             Delete Hotline?
                         </h2>
 
-                        {/* TEXT */}
                         <p className="text-xs text-slate-500 text-center mt-1 mb-4 leading-snug">
                             This action cannot be undone.
                         </p>
 
-                        {/* BUTTONS */}
                         <div className="flex gap-2">
 
                             <button

@@ -114,7 +114,6 @@ export default function AnnouncementPage() {
                 </header>
 
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    {/* EDITOR SECTION */}
                     <div className="xl:col-span-1">
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-6">
                             <h2 className="text-xs font-black mb-6 text-gray-400 uppercase tracking-[0.2em]">New Announcement</h2>
@@ -184,7 +183,6 @@ export default function AnnouncementPage() {
                         </div>
                     </div>
 
-                    {/* LIST SECTION */}
                     <div className="xl:col-span-2 space-y-6">
                         <div className="flex items-center justify-between px-2">
                             <div className="flex items-center gap-3">
@@ -204,7 +202,6 @@ export default function AnnouncementPage() {
 
                             {announcements.map((post) => (
                                 <div key={post.id} className="bg-white rounded-xl shadow-sm border border-gray-100 flex p-4 gap-5 hover:shadow-md transition-all group">
-                                    {/* COMPACT IMAGE CONTAINER */}
                                     <div className="w-32 h-32 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                                         {post.imageUrl ? (
                                             <img src={post.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="post" />
@@ -215,7 +212,6 @@ export default function AnnouncementPage() {
                                         )}
                                     </div>
 
-                                    {/* CONTENT AREA */}
                                     <div className="flex-1 flex flex-col">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className={`text-[10px] font-black uppercase ${

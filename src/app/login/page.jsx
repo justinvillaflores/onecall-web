@@ -17,7 +17,6 @@ export default function LoginPage() {
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        // Basic Validation bago tumawag sa Firebase
         if (!email.trim() || !password.trim()) {
             alert("Please fill in all fields.");
             return;
@@ -26,15 +25,12 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            // 1. Login gamit ang Firebase Auth
             const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
             const user = userCredential.user;
 
-            // 2. Kukunin ang record mula sa Firestore 'users' collection
             const userDocRef = doc(db, "users", user.uid);
             const userDoc = await getDoc(userDocRef);
 
-            // CHECK: Kung deleted na ang account sa Firestore list o walang record
             if (!userDoc.exists()) {
                 await signOut(auth);
                 alert("Account record not found in database. Please contact the administrator.");
@@ -45,12 +41,9 @@ export default function LoginPage() {
             const userData = userDoc.data();
             const role = userData.role;
 
-            // 3. Conditional Redirect base sa Role
-            // Siguraduhing tumutugma ang role names sa Firestore (e.g., 'admin', 'responder')
             if (role === "admin") {
                 router.push("/dashboard");
             } else if (role === "responder") {
-                // Tiyaking tama ang path na ito sa iyong file structure
                 router.push("/role-responder/role-dashboard");
             } else {
                 alert("Access Denied: You do not have the required permissions to access this portal.");
@@ -60,7 +53,6 @@ export default function LoginPage() {
         } catch (error) {
             console.error("Login Error Code:", error.code);
 
-            // Mas malinaw na error messages para sa user
             let friendlyMessage = "Login failed. Please check your credentials.";
 
             if (error.code === 'auth/invalid-credential') {
