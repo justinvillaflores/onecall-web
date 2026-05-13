@@ -251,7 +251,6 @@ export default function RoleMessages() {
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                                 <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-4">
-                                    {/* FIX: Eto yung MessageSquare na kailangan i-import */}
                                     <MessageSquare size={32} className="text-slate-200" />
                                 </div>
                                 <h3 className="text-slate-800 font-bold text-sm">System Terminal Standby</h3>
