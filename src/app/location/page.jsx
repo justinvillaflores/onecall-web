@@ -1,72 +1,216 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Sidebar from "@/components/Sidebar";
-import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebase";
-import { collection, query, onSnapshot } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { collection, onSnapshot } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
-
+import { auth, db } from "@/lib/firebase";
+import Sidebar from "@/components/Sidebar";
 import "leaflet/dist/leaflet.css";
 
-const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), {
+const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapContainer), {
     ssr: false,
-    loading: () => <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center">Loading City Map...</div>
+    loading: () => <div className="flex h-full items-center justify-center bg-gray-100 text-sm text-gray-500">Loading city map...</div>
 });
-const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
+const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
+const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ssr: false });
+const Popup = dynamic(() => import("react-leaflet").then((m) => m.Popup), { ssr: false });
+const Tooltip = dynamic(() => import("react-leaflet").then((m) => m.Tooltip), { ssr: false });
+
+const CENTER = [14.8348, 120.2827];
+const MAP_STYLE = { height: "100%", width: "100%", zIndex: 1 };
+
+function getLeafletIcons() {
+    const L = require("leaflet");
+    const userIcon = L.divIcon({
+        className: "custom-user-marker",
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
+        popupAnchor: [0, -17],
+        html: `<div style="position:relative;width:34px;height:34px;display:grid;place-items:center"><span style="position:absolute;inset:0;border-radius:50%;background:#2563eb;opacity:.3;animation:pulse 1.5s infinite"></span><div style="width:28px;height:28px;border:2.5px solid white;border-radius:50%;background:#2563eb;display:grid;place-items:center;box-shadow:0 3px 10px #2563eb80"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div>`
+    });
+
+    return {
+        userIcon,
+        responderIcon: (imageUrl) => L.divIcon({
+            className: "custom-responder-logo-marker",
+            iconSize: [44, 44],
+            iconAnchor: [22, 22],
+            popupAnchor: [0, -22],
+            html: `<div style="position:relative;width:44px;height:44px;display:grid;place-items:center"><span style="position:absolute;inset:0;border-radius:50%;background:#ef4444;opacity:.35;animation:pulse 1.2s infinite"></span><div style="position:relative;width:36px;height:36px;overflow:hidden;border:3px solid white;border-radius:50%;background:#dc2626;display:grid;place-items:center;box-shadow:0 4px 12px #dc262699">${imageUrl ? `<img src="${String(imageUrl).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")}" alt="Responder logo" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"/>` : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`}</div></div>`
+        })
+    };
+}
+
+function validAddress(value) {
+    if (typeof value !== "string") return "";
+
+    const text = value.trim();
+    if (
+        !text ||
+        /^(unknown(?:\s+(?:street|road|barangay|address))?|unnamed(?:\s+(?:street|road|barangay|address))?|n\/?a|n\.a\.|not available|address unavailable|barangay unavailable|none|null|undefined|-)$/i.test(text) ||
+        /^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,}$/i.test(text)
+    ) {
+        return "";
+    }
+
+    return text;
+}
+
+const getProfileAddressParts = (unit) => {
+    const address = unit?.address || unit?.profile?.address || unit?.homeAddress || "";
+    if (!validAddress(address)) return { street: "", barangay: "" };
+
+    const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
+    let street = parts[0] || "";
+    let barangay = "";
+
+    const explicitBarangay = address.match(/\b(?:brgy\.?|barangay)\s+([^,]+)/i);
+    if (explicitBarangay) barangay = explicitBarangay[1].trim();
+    else if (parts.length > 1) barangay = parts[1];
+
+    if (/^(olongapo city|philippines)$/i.test(street)) street = "";
+    if (/^(olongapo city|philippines)$/i.test(barangay)) barangay = "";
+
+    return {
+        street: validAddress(street) ? street : "",
+        barangay: validAddress(barangay) ? barangay : ""
+    };
+};
+
+function getStreet(unit) {
+    const profileParts = getProfileAddressParts(unit);
+
+    return (
+        validAddress(unit.street) ||
+        validAddress(unit.lastKnownStreet) ||
+        validAddress(unit.streetName) ||
+        validAddress(unit.addressStreet) ||
+        validAddress(unit.profile?.street) ||
+        profileParts.street ||
+        "Address unavailable"
+    );
+}
+
+function getBarangay(unit) {
+    const profileParts = getProfileAddressParts(unit);
+
+    return (
+        validAddress(unit.barangay) ||
+        validAddress(unit.lastKnownBarangay) ||
+        validAddress(unit.barangayName) ||
+        validAddress(unit.profile?.barangay) ||
+        profileParts.barangay ||
+        "Barangay unavailable"
+    );
+}
+
+function lastSync(value) {
+    try {
+        const date = value?.toDate
+            ? value.toDate()
+            : value instanceof Date
+                ? value
+                : null;
+
+        if (!date || Number.isNaN(date.getTime())) return "Unavailable";
+        return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+        return "Unavailable";
+    }
+}
+
+function InfoRow({ label, children }) {
+    return (
+        <div className="flex items-start gap-2">
+            <span className="mt-0.5 w-12 shrink-0 text-[9px] font-black uppercase text-gray-400">{label}:</span>
+            <div className="min-w-0 flex-1 break-words text-[11px] font-bold text-slate-700">{children}</div>
+        </div>
+    );
+}
 
 export default function AdminLocationPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
-    const [responderIcon, setResponderIcon] = useState(null);
-    const [userIcon, setUserIcon] = useState(null);
+    const [icons, setIcons] = useState(null);
     const [units, setUnits] = useState([]);
-    const [centerPos] = useState([14.8348, 120.2827]);
+    const [mapError, setMapError] = useState("");
 
     useEffect(() => {
         setIsMounted(true);
-        const L = require("leaflet");
+        let styleSheet;
 
-        setResponderIcon(L.icon({
-            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-            shadowSize: [41, 41]
-        }));
+        try {
+            setIcons(getLeafletIcons());
+            styleSheet = document.createElement("style");
+            styleSheet.textContent = `
+                .custom-user-marker,.custom-responder-logo-marker{background:transparent!important;border:0!important;transition:transform .8s linear!important}
+                @keyframes pulse{0%{transform:scale(.85);opacity:.45}70%{transform:scale(1.2);opacity:.1}100%{transform:scale(1.3);opacity:0}}
+            `;
+            document.head.appendChild(styleSheet);
+        } catch (error) {
+            console.error("Map icon initialization error:", error);
+            setMapError("Unable to initialize map markers.");
+        }
 
-        setUserIcon(L.icon({
-            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-            shadowSize: [41, 41]
-        }));
+        return () => {
+            if (styleSheet?.parentNode) styleSheet.parentNode.removeChild(styleSheet);
+        };
     }, []);
 
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-            if (!user) { router.push("/login"); return; }
-            setLoading(false);
-        });
+        let unsubscribeUsers = () => {};
 
-        const q = query(collection(db, "users"));
-        const unsubscribeUsers = onSnapshot(q, (snapshot) => {
-            const list = [];
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.lastKnownLat && data.lastKnownLon) {
-                    list.push({ id: doc.id, ...data });
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                unsubscribeUsers();
+                setLoading(false);
+                router.replace("/login");
+                return;
+            }
+
+            unsubscribeUsers = () => {};
+
+            unsubscribeUsers = onSnapshot(
+                collection(db, "users"),
+                (snapshot) => {
+                    const list = [];
+
+                    snapshot.forEach((userDoc) => {
+                        const data = userDoc.data();
+                        const lat = data.lastKnownLat;
+                        const lon = data.lastKnownLon;
+
+                        if (
+                            typeof lat === "number" &&
+                            Number.isFinite(lat) &&
+                            lat >= -90 &&
+                            lat <= 90 &&
+                            typeof lon === "number" &&
+                            Number.isFinite(lon) &&
+                            lon >= -180 &&
+                            lon <= 180
+                        ) {
+                            list.push({
+                                id: userDoc.id,
+                                ...data
+                            });
+                        }
+                    });
+
+                    setUnits(list);
+                    setLoading(false);
+                    setMapError("");
+                },
+                (error) => {
+                    console.error("Firestore location listener error:", error);
+                    setMapError("Unable to load live locations. Check your connection and Firestore permissions.");
+                    setLoading(false);
                 }
-            });
-            setUnits(list);
+            );
         });
 
         return () => {
@@ -76,14 +220,18 @@ export default function AdminLocationPage() {
     }, [router]);
 
     const handleLogout = async () => {
-        await signOut(auth);
-        router.push("/login");
+        try {
+            await signOut(auth);
+            router.replace("/login");
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
     };
 
-    if (!isMounted || loading) {
+    if (!isMounted || loading || !icons) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#F1F3F9]">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
             </div>
         );
     }
@@ -91,91 +239,106 @@ export default function AdminLocationPage() {
     return (
         <div className="flex min-h-screen bg-[#F5F6FA]">
             <Sidebar handleLogout={handleLogout} />
-            <main className="flex-1 ml-[280px] p-6 h-screen flex flex-col overflow-hidden">
 
-                <div className="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center px-8">
+            <main className="ml-[280px] flex h-screen min-w-0 flex-1 flex-col overflow-hidden p-6">
+                <header className="mb-4 flex items-center justify-between rounded-xl border border-gray-100 bg-white px-8 py-4 shadow-sm">
                     <div>
-                        <h1 className="font-bold text-gray-800 text-lg tracking-tight">City-Wide Live Monitoring</h1>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Olongapo City Emergency Fleet</p>
+                        <h1 className="text-lg font-bold tracking-tight text-gray-800">City-Wide Live Monitoring</h1>
+                        <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                            Olongapo City Real-Time Fleet & Active Users
+                        </p>
                     </div>
                     <div className="text-right">
-                        <p className="text-xs font-bold text-gray-500 uppercase">Active Units</p>
-                        <p className="text-xl font-black text-blue-600 leading-none">{units.length}</p>
+                        <p className="text-xs font-bold uppercase text-gray-500">Units on Map</p>
+                        <p className="text-xl font-black leading-none text-blue-600">{units.length}</p>
                     </div>
-                </div>
+                </header>
 
-                <div className="flex-1 bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden relative">
-                    <MapContainer center={centerPos} zoom={14} style={{ height: "100%", width: "100%", zIndex: 1 }}>
-                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {mapError && (
+                    <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                        {mapError}
+                    </div>
+                )}
 
-                        {units.map((u) => (
-                            <Marker
-                                key={u.id}
-                                position={[u.lastKnownLat, u.lastKnownLon]}
-                                icon={u.role === 'responder' ? responderIcon : userIcon}
-                            >
+                <section className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+                    <MapContainer center={CENTER} zoom={14} style={MAP_STYLE}>
+                        <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        />
 
-                                <Popup>
-                                    <div className="p-2 min-w-[200px] font-sans">
-                                        <p className={`font-black text-sm mb-1 uppercase tracking-tight ${u.role === 'responder' ? 'text-red-600' : 'text-blue-600'}`}>
-                                            {u.role === 'responder' ? (u.name || "Unknown Responder") : (u.username || "Unknown Citizen")}
-                                        </p>
+                        {units.map((unit) => {
+                            const isResponder = unit.role === "responder";
+                            const title = isResponder
+                                ? unit.name || unit.username || "Unknown Responder"
+                                : unit.username || unit.fullName || unit.fullname || unit.name || "Unknown Citizen";
+                            const markerIcon = isResponder ? icons.responderIcon(unit.imageUrl) : icons.userIcon;
 
-                                        <div className="h-[2px] bg-gray-100 my-2"></div>
+                            return (
+                                <Marker
+                                    key={unit.id}
+                                    position={[unit.lastKnownLat, unit.lastKnownLon]}
+                                    icon={markerIcon}
+                                    zIndexOffset={isResponder ? 1000 : 0}
+                                >
+                                    <Tooltip direction="top" offset={[0, isResponder ? -18 : -12]} opacity={0.95}>
+                                        <span className={isResponder ? "font-bold text-red-600" : "font-bold text-blue-600"}>
+                                            {title}
+                                        </span>
+                                    </Tooltip>
 
-                                        <div className="space-y-1.5">
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-[9px] font-black text-gray-400 uppercase w-12 mt-0.5">Street:</span>
-                                                <p className="text-[11px] text-slate-700 font-bold flex-1 leading-tight">
-                                                    {u.lastKnownStreet || "Unnamed Street"}
-                                                </p>
+                                    <Popup>
+                                        <div className="min-w-[220px] space-y-2 p-2 font-sans">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    {isResponder && unit.imageUrl && (
+                                                        <img src={unit.imageUrl} alt="Responder logo" className="h-7 w-7 rounded-full border border-red-200 object-cover" />
+                                                    )}
+                                                    <p className={`break-words text-sm font-black uppercase ${isResponder ? "text-red-600" : "text-blue-600"}`}>
+                                                        {title}
+                                                    </p>
+                                                </div>
+                                                <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
                                             </div>
 
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-[9px] font-black text-gray-400 uppercase w-12 mt-0.5">Brgy:</span>
-                                                <p className="text-[11px] text-blue-600 font-black italic flex-1">
-                                                    {u.lastKnownBarangay || "Not Set"}
-                                                </p>
-                                            </div>
+                                            <div className="h-px bg-gray-100" />
+                                            <InfoRow label="Role">{unit.role || "Citizen"}</InfoRow>
+                                            <InfoRow label="Street">{getStreet(unit)}</InfoRow>
+                                            <InfoRow label="Brgy">{getBarangay(unit)}</InfoRow>
+                                            <InfoRow label="Phone">{unit.phoneNumber || unit.contactNumber || unit.phone || "No contact"}</InfoRow>
 
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-[9px] font-black text-gray-400 uppercase w-12 mt-0.5">Phone:</span>
-                                                <p className="text-[11px] text-slate-800 font-bold flex-1">
-                                                    {u.phoneNumber || "No Contact"}
-                                                </p>
+                                            {Number.isFinite(unit.speed) && unit.speed > 0 && (
+                                                <InfoRow label="Speed">
+                                                    <span className="text-amber-600">{(unit.speed * 3.6).toFixed(1)} km/h</span>
+                                                </InfoRow>
+                                            )}
+
+                                            <div className="flex items-center justify-between gap-2 border-t border-gray-100 pt-2">
+                                                <span className="text-[8px] font-black uppercase tracking-wider text-gray-400">Last Sync</span>
+                                                <span className="text-[10px] font-bold text-emerald-600">{lastSync(unit.lastLocationUpdate)}</span>
                                             </div>
                                         </div>
-
-                                        <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center">
-                                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">Last Sync</span>
-                                            <span className="text-[9px] text-gray-500 font-medium italic">
-                                                {u.lastLocationUpdate
-                                                    ? (typeof u.lastLocationUpdate.toDate === 'function'
-                                                        ? formatDistanceToNow(u.lastLocationUpdate.toDate(), { addSuffix: true })
-                                                        : formatDistanceToNow(new Date(u.lastLocationUpdate), { addSuffix: true }))
-                                                    : 'Just now'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        ))}
+                                    </Popup>
+                                </Marker>
+                            );
+                        })}
                     </MapContainer>
 
-                    <div className="absolute bottom-6 right-6 z-[1000] bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-2xl border border-gray-100">
-                        <p className="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest border-b pb-1">Legend</p>
-                        <div className="space-y-2">
+                    <div className="absolute bottom-6 right-6 z-[1000] rounded-2xl border border-gray-100 bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+                        <p className="mb-3 border-b pb-1 text-[9px] font-black uppercase tracking-widest text-gray-400">Live Fleet Legend</p>
+                        <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 bg-red-500 rounded-full shadow-sm shadow-red-200"></div>
-                                <span className="text-[10px] font-bold text-gray-600 uppercase">Emergency Responders</span>
+                                <span className="h-5 w-5 rounded-full border-2 border-white bg-red-600 shadow-sm" />
+                                <span className="text-[10px] font-bold uppercase text-gray-700">Emergency Responders</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-sm shadow-blue-200"></div>
-                                <span className="text-[10px] font-bold text-gray-600 uppercase">Citizens / Users</span>
+                                <span className="h-4 w-4 rounded-full border-2 border-white bg-blue-600 shadow-sm" />
+                                <span className="text-[10px] font-bold uppercase text-gray-700">Citizens / Users</span>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </main>
         </div>
     );

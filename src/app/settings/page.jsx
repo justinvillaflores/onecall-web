@@ -19,7 +19,6 @@ import {
     Mail,
     Phone,
     BadgeCheck,
-    Lock,
     KeyRound,
     AlertCircle
 } from "lucide-react";
@@ -32,7 +31,9 @@ export default function AdminSettings() {
     const [saveLoading, setSaveLoading] = useState(false);
 
     const [profileData, setProfileData] = useState({
-        fullName: "",
+        firstName: "",
+        middleName: "",
+        lastName: "",
         email: "ocpoadministrator@gmail.com",
         phone: "",
         role: "System Administrator",
@@ -60,7 +61,9 @@ export default function AdminSettings() {
                         setUserData({ id: user.uid, ...data });
                         setProfileData((prev) => ({
                             ...prev,
-                            fullName: data.name || "System Admin",
+                            firstName: data.firstName || data.name || "",
+                            middleName: data.middleName || "",
+                            lastName: data.lastName || "",
                             email: data.email || "ocpoadministrator@gmail.com",
                             phone: data.phoneNumber || "",
                         }));
@@ -86,8 +89,13 @@ export default function AdminSettings() {
         setSaveLoading(true);
         try {
             const userRef = doc(db, "users", userData.id);
+            const fullNameCombined = `${profileData.firstName} ${profileData.middleName ? profileData.middleName + ' ' : ''}${profileData.lastName}`.trim();
+
             await updateDoc(userRef, {
-                name: profileData.fullName,
+                firstName: profileData.firstName,
+                middleName: profileData.middleName,
+                lastName: profileData.lastName,
+                name: fullNameCombined,
                 phoneNumber: profileData.phone,
             });
             alert("Admin information updated successfully.");
@@ -165,22 +173,52 @@ export default function AdminSettings() {
                             {activeTab === "profile" && (
                                 <div className="animate-in slide-in-from-bottom-2 duration-500">
                                     <form onSubmit={handleUpdateProfile} className="space-y-8">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div className="space-y-2 group">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <UserCircle size={14} className="text-slate-400 group-focus-within:text-[#2D3FE2]" />
-                                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Administrator Full Name</label>
+                                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">First Name</label>
                                                 </div>
                                                 <input
                                                     type="text"
-                                                    value={profileData.fullName}
-                                                    onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
+                                                    required
+                                                    value={profileData.firstName}
+                                                    onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
                                                     className="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-5 py-3 font-bold text-slate-800 outline-none focus:border-[#2D3FE2] focus:bg-white transition-all shadow-sm"
-                                                    placeholder="Enter your name"
+                                                    placeholder="First Name"
                                                 />
                                             </div>
 
                                             <div className="space-y-2 group">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <UserCircle size={14} className="text-slate-400 group-focus-within:text-[#2D3FE2]" />
+                                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Middle Name (Optional)</label>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={profileData.middleName}
+                                                    onChange={(e) => setProfileData({...profileData, middleName: e.target.value})}
+                                                    className="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-5 py-3 font-bold text-slate-800 outline-none focus:border-[#2D3FE2] focus:bg-white transition-all shadow-sm"
+                                                    placeholder="Middle Name"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2 group">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <UserCircle size={14} className="text-slate-400 group-focus-within:text-[#2D3FE2]" />
+                                                    <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Last Name</label>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={profileData.lastName}
+                                                    onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
+                                                    className="w-full bg-slate-100 border-2 border-slate-200 rounded-xl px-5 py-3 font-bold text-slate-800 outline-none focus:border-[#2D3FE2] focus:bg-white transition-all shadow-sm"
+                                                    placeholder="Last Name"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2 group md:col-span-1.5">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <Phone size={14} className="text-slate-400 group-focus-within:text-[#2D3FE2]" />
                                                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Official Contact Number</label>
@@ -199,7 +237,7 @@ export default function AdminSettings() {
                                                     <BadgeCheck size={14} className="text-emerald-500" />
                                                     <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">System Permission Level</label>
                                                 </div>
-                                                <div className="w-full bg-slate-200/50 border-2 border-slate-200 rounded-xl px-5 py-4 font-black text-slate-500 uppercase tracking-tight">
+                                                <div className="w-full bg-slate-200/50 border-2 border-slate-200 rounded-xl px-5 py-3 font-black text-slate-500 uppercase tracking-tight">
                                                     {profileData.role}
                                                 </div>
                                             </div>

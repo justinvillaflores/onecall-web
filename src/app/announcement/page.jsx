@@ -211,7 +211,6 @@ export default function AnnouncementPage() {
                                             </div>
                                         )}
                                     </div>
-
                                     <div className="flex-1 flex flex-col">
                                         <div className="flex justify-between items-start mb-2">
                                             <span className={`text-[10px] font-black uppercase ${

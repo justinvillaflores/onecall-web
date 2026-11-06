@@ -33,8 +33,8 @@ import {
 export default function HotlinesPage() {
     const router = useRouter();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Para sa delete modal
-    const [idToDelete, setIdToDelete] = useState(null); // ID na buburahin
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [idToDelete, setIdToDelete] = useState(null);
     const [mounted, setMounted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -186,7 +186,6 @@ export default function HotlinesPage() {
                         />
                     </div>
 
-                    {/* Add Button */}
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold
@@ -315,12 +314,14 @@ export default function HotlinesPage() {
                                 >
                                     <option value="Police">Police Station</option>
                                     <option value="Barangay">Barangay</option>
-                                    <option value="Other">Other Emergency Hotlines</option>
+                                    <option value="Other Emergency Hotlines">
+                                        Other Emergency Hotlines
+                                    </option>
                                     <option value="Report">Report</option>
                                     <option value="Services">Services</option>
-                                    <option value="Pages">Pages</option>
                                     <option value="Other Pages">Other Pages</option>
-                                    <option value="Olongapo City CCTV Live Stream One">CCTV Stream</option>
+                                    <option value="Pages">Pages</option>
+                                    <option value="CCTV Stream">CCTV Stream</option>
                                 </select>
                             </div>
                             <div>
@@ -378,8 +379,8 @@ export default function HotlinesPage() {
                                             reader.readAsDataURL(file);
                                         }}
                                         className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0 file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                                        file:rounded-md file:border-0 file:text-sm file:font-semibold
+                                        file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
                                     />
                                 </div>
                             </div>

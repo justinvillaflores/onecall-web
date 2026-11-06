@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Sidebar from "@/components/Sidebar";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import {
     doc,
@@ -17,10 +17,13 @@ import {
     where
 } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { Search, Send, User, MessageSquare } from "lucide-react";
+import { Search, Send, User, MessageSquare, Image as ImageIcon, X, MapPin } from "lucide-react";
 
-export default function RoleMessages() {
+function RoleMessagesContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const targetChatId = searchParams.get("chatId");
+
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -29,6 +32,7 @@ export default function RoleMessages() {
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState("");
     const [search, setSearch] = useState("");
+    const [previewImageUrl, setPreviewImageUrl] = useState(null);
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -71,12 +75,19 @@ export default function RoleMessages() {
 
             const sortedList = list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
             setChatList(sortedList);
+
+            if (targetChatId) {
+                const targetChat = sortedList.find(chat => chat.id === targetChatId);
+                if (targetChat) {
+                    setSelectedChat(targetChat);
+                }
+            }
         }, (error) => {
             console.error("Error listening to chats:", error);
         });
 
         return () => unsubscribe();
-    }, [userData]);
+    }, [userData, targetChatId]);
 
     useEffect(() => {
         if (!selectedChat) return;
@@ -107,6 +118,7 @@ export default function RoleMessages() {
                 text: inputText,
                 senderId: userData.id,
                 createdAt: serverTimestamp(),
+                type: 'text'
             };
 
             await addDoc(collection(db, "chats", selectedChat.id, "messages"), msgData);
@@ -125,6 +137,22 @@ export default function RoleMessages() {
     const handleLogout = async () => {
         await signOut(auth);
         router.push("/login");
+    };
+
+    const handleSeeLocation = () => {
+        if (!selectedChat) return;
+
+        const citizenId = selectedChat.citizenId || selectedChat.participants?.find((id) => id !== userData?.id);
+
+        const params = new URLSearchParams();
+        if (citizenId) params.set("citizenId", citizenId);
+
+        if (selectedChat.lastKnownLat && selectedChat.lastKnownLon) {
+            params.set("lat", selectedChat.lastKnownLat);
+            params.set("lon", selectedChat.lastKnownLon);
+        }
+
+        router.push(`/role-responder/role-map?${params.toString()}`);
     };
 
     if (loading) {
@@ -152,6 +180,7 @@ export default function RoleMessages() {
                 </div>
 
                 <div className="flex-1 flex gap-6 overflow-hidden h-[calc(100vh-140px)] pb-4">
+                    {/* Chat Sidebar List */}
                     <div className="w-[380px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col shrink-0 overflow-hidden">
                         <div className="p-4 border-b border-gray-50 shrink-0">
                             <div className="relative">
@@ -202,19 +231,54 @@ export default function RoleMessages() {
                                             <p className="text-[10px] text-green-500 uppercase font-bold tracking-widest mt-1">Responder-Citizen Link</p>
                                         </div>
                                     </div>
+
+                                    <button
+                                        onClick={handleSeeLocation}
+                                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all active:scale-95"
+                                    >
+                                        <MapPin size={16} />
+                                        <span>See Location</span>
+                                    </button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 bg-[#FBFBFE]">
                                     {messages.map((msg) => {
                                         const isMe = msg.senderId === userData.id;
+                                        const imageSrc = msg.imageUrl || msg.image || (msg.type === 'image' ? msg.text : null);
+
                                         return (
                                             <div key={msg.id} className={`flex items-start gap-3 w-full ${isMe ? 'flex-row-reverse' : ''}`}>
-                                                <div className={`max-w-[70%] p-4 rounded-2xl ${
+                                                <div className={`max-w-[70%] p-3.5 rounded-2xl ${
                                                     isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-gray-100 text-gray-700 rounded-tl-none shadow-sm'
                                                 }`}>
-                                                    <p className="text-sm font-medium">{msg.text}</p>
-                                                    <span className={`text-[9px] mt-2 block opacity-60 uppercase font-bold`}>
-                                                        {msg.createdAt ? new Date(msg.createdAt.toDate()).toLocaleTimeString() : '...'}
+                                                    {imageSrc ? (
+                                                        <div className="space-y-2">
+                                                            <div
+                                                                className="relative rounded-xl overflow-hidden cursor-pointer group border border-gray-100/20 max-w-[320px]"
+                                                                onClick={() => setPreviewImageUrl(imageSrc)}
+                                                            >
+                                                                <img
+                                                                    src={imageSrc}
+                                                                    alt="Emergency Proof Attachment"
+                                                                    className="w-full h-auto max-h-60 object-cover rounded-lg transition-transform duration-200 group-hover:scale-105"
+                                                                    loading="lazy"
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <span className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
+                                                                        <ImageIcon size={12} /> View Image
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            {msg.text && msg.text !== imageSrc && (
+                                                                <p className="text-sm font-medium pt-1">{msg.text}</p>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm font-medium">{msg.text}</p>
+                                                    )}
+
+                                                    <span className={`text-[9px] mt-1.5 block opacity-60 uppercase font-bold ${isMe ? 'text-right' : 'text-left'}`}>
+                                                        {msg.createdAt?.toDate ? new Date(msg.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -228,11 +292,11 @@ export default function RoleMessages() {
                                         <input
                                             type="text"
                                             placeholder="Type message..."
-                                            className="flex-1 bg-gray-50 px-6 py-3 rounded-xl text-sm outline-none border border-gray-200"
+                                            className="flex-1 bg-gray-50 px-6 py-3 rounded-xl text-sm outline-none border border-gray-200 focus:border-blue-300"
                                             value={inputText}
                                             onChange={(e) => setInputText(e.target.value)}
                                         />
-                                        <button type="submit" className="bg-blue-600 text-white p-3 px-6 rounded-xl hover:bg-blue-700 transition-all">
+                                        <button type="submit" className="bg-blue-600 text-white p-3 px-6 rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center">
                                             <Send size={18} />
                                         </button>
                                     </div>
@@ -250,6 +314,39 @@ export default function RoleMessages() {
                     </div>
                 </div>
             </main>
+
+            {previewImageUrl && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200"
+                    onClick={() => setPreviewImageUrl(null)}
+                >
+                    <div className="relative max-w-4xl max-h-[90vh] bg-transparent flex flex-col items-center">
+                        <button
+                            onClick={() => setPreviewImageUrl(null)}
+                            className="absolute -top-10 right-0 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"
+                        >
+                            <X size={20} />
+                        </button>
+                        <img
+                            src={previewImageUrl}
+                            alt="Attachment Preview"
+                            className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
+    );
+}
+
+export default function RoleMessages() {
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen items-center justify-center bg-[#F1F3F9]">
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        }>
+            <RoleMessagesContent />
+        </Suspense>
     );
 }

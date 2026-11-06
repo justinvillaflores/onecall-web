@@ -75,19 +75,10 @@ export default function Sidebar() {
 
     return (
         <>
-            <aside className="w-[280px] flex flex-col h-screen fixed left-0 top-0 z-[50] shadow-2xl overflow-hidden" style={{ backgroundColor: "#2D3FE2" }}>
+            <aside className="w-[270px] flex flex-col h-screen fixed left-0 top-0 z-[50] shadow-2xl overflow-hidden" style={{ backgroundColor: "#2D3FE2" }}>
 
-                <div className="pt-20 pb-6 w-full flex flex-col items-center justify-center">
-                    <div
-                        className="w-20 h-20 flex items-center justify-center shadow-2xl border border-white/30"
-                        style={{
-                            borderRadius: '50%',
-                            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                            overflow: 'hidden',
-                            backdropFilter: 'blur(8px)',
-                            WebkitBackdropFilter: 'blur(8px)'
-                        }}
-                    >
+                <div className="pt-10 pb-6 w-full flex flex-col items-center justify-center">
+                    <div className="w-28 h-28 flex items-center justify-center overflow-hidden rounded-full border-2 border-white/20">
                         {profileImage ? (
                             <img
                                 src={profileImage}
@@ -96,14 +87,14 @@ export default function Sidebar() {
                             />
                         ) : (
                             <img
-                                src="/logo.png"
+                                src="/download1.png"
                                 alt="Default Logo"
-                                className="w-16 h-16 object-contain"
+                                className="w-28 h-28 object-contain"
                             />
                         )}
                     </div>
 
-                    <div className="text-center mt-4">
+                    <div className="text-center mt-3">
                         <h2 className="text-white text-[14px] font-black tracking-[4px] uppercase mb-1">
                             {userRole === "responder" ? "Responder" : "Administrator"}
                         </h2>
@@ -112,7 +103,7 @@ export default function Sidebar() {
                 </div>
 
                 <div className="px-10">
-                    <div className="h-[1px] bg-white/20 w-full mb-3 mt-8"></div>
+                    <div className="h-[1px] bg-white/20 w-full mb-3"></div>
                 </div>
 
                 <nav className="flex-1 px-5 space-y-3 overflow-y-auto no-scrollbar">
@@ -160,7 +151,7 @@ export default function Sidebar() {
             </aside>
 
             {showLogoutConfirm && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-smtransition-all duration-300">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all duration-300">
                     <div className="bg-white w-[340px] rounded-2xl p-6 shadow-2xl text-center relative animate-in fade-in zoom-in duration-200">
                         <h2 className="text-lg font-bold text-gray-900 mb-2">
                             Confirm Logout
@@ -177,7 +168,7 @@ export default function Sidebar() {
                             </button>
                             <button
                                 onClick={confirmLogout}
-                                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 font-bold rounded-xl shadow-lg shadow-red-100 transition-all active:scale-95"
+                                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 font-bold rounded-xl shadow-lg shadow-red-100 transition-all active:scale-95 text-white"
                             >
                                 Logout
                             </button>

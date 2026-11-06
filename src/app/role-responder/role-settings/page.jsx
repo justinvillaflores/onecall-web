@@ -4,15 +4,9 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import {
-    User,
-    Lock,
-    Bell,
-    Camera,
-    Save,
-} from "lucide-react";
+import { User, Lock, Bell, Save, Send, AlertTriangle } from "lucide-react";
 
 export default function RoleSettings() {
     const router = useRouter();
@@ -20,12 +14,22 @@ export default function RoleSettings() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("profile");
     const [saveLoading, setSaveLoading] = useState(false);
+    const [reportLoading, setReportLoading] = useState(false);
 
     const [profileData, setProfileData] = useState({
         fullName: "",
         email: "",
         phone: "",
+        street: "",
+        barangay: "",
         imageUrl: ""
+    });
+
+    const [reportForm, setReportForm] = useState({
+        incidentType: "Medical Emergency",
+        location: "",
+        priority: "High",
+        details: ""
     });
 
     useEffect(() => {
@@ -34,150 +38,244 @@ export default function RoleSettings() {
                 router.push("/login");
                 return;
             }
+
             try {
-                const docSnap = await getDoc(doc(db, "users", user.uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.role !== "responder") {
-                        router.push("/dashboard");
-                    } else {
-                        setUserData({ id: user.uid, ...data });
-                        setProfileData({
-                            fullName: data.name || "",
-                            email: data.email || user.email,
-                            phone: data.phoneNumber || "",
-                            imageUrl: data.imageUrl || ""
-                        });
-                        setLoading(false);
-                    }
-                } else {
+                const userRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(userRef);
+
+                if (!docSnap.exists()) {
                     router.push("/login");
+                    return;
                 }
+
+                const data = docSnap.data();
+
+                if (data.role !== "responder") {
+                    router.push("/dashboard");
+                    return;
+                }
+
+                setUserData({ id: user.uid, ...data });
+                setProfileData({
+                    fullName: data.name || "",
+                    email: data.email || user.email || "",
+                    phone: data.phoneNumber || "",
+                    street: data.street || "",
+                    barangay: data.barangay || "",
+                    imageUrl: data.imageUrl || ""
+                });
+                setLoading(false);
             } catch (error) {
-                console.error("Security check error:", error);
+                console.error("Profile loading error:", error);
                 router.push("/login");
             }
         });
+
         return () => unsubscribe();
     }, [router]);
 
     const handleLogout = async () => {
-        await signOut(auth);
-        router.push("/login");
+        try {
+            await signOut(auth);
+            router.push("/login");
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert("Failed to log out. Please try again.");
+        }
     };
 
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
+
+        const currentUser = auth.currentUser;
+        if (!currentUser || !userData?.id || currentUser.uid !== userData.id) {
+            alert("Your session is invalid. Please log in again.");
+            router.push("/login");
+            return;
+        }
+
         setSaveLoading(true);
+
         try {
-            const userRef = doc(db, "users", userData.id);
-            await updateDoc(userRef, {
-                name: profileData.fullName,
-                phoneNumber: profileData.phone,
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                name: profileData.fullName.trim(),
+                phoneNumber: profileData.phone.trim(),
+                street: profileData.street.trim(),
+                barangay: profileData.barangay.trim()
             });
+
+            setUserData((prev) => ({
+                ...prev,
+                name: profileData.fullName.trim(),
+                phoneNumber: profileData.phone.trim(),
+                street: profileData.street.trim(),
+                barangay: profileData.barangay.trim()
+            }));
+
             alert("Profile updated successfully!");
         } catch (error) {
             console.error("Error updating profile:", error);
-            alert("Failed to update profile.");
+            alert("Failed to update profile. Please try again.");
         } finally {
             setSaveLoading(false);
         }
     };
 
+    const handleSendReport = async (e) => {
+        e.preventDefault();
+
+        if (!reportForm.location.trim() || !reportForm.details.trim()) {
+            alert("Please fill in all required fields (Location & Details).");
+            return;
+        }
+
+        if (!userData?.id || auth.currentUser?.uid !== userData.id) {
+            alert("Your session is invalid. Please log in again.");
+            router.push("/login");
+            return;
+        }
+
+        setReportLoading(true);
+
+        try {
+            await addDoc(collection(db, "reports"), {
+                responderId: userData.id,
+                responderName: profileData.fullName || "Responder Unit",
+                incidentType: reportForm.incidentType,
+                location: reportForm.location.trim(),
+                priority: reportForm.priority,
+                details: reportForm.details.trim(),
+                createdAt: serverTimestamp(),
+                status: "Pending"
+            });
+
+            alert("Incident Report sent to Admin successfully!");
+            setReportForm({
+                incidentType: "Medical Emergency",
+                location: "",
+                priority: "High",
+                details: ""
+            });
+        } catch (error) {
+            console.error("Error sending report:", error);
+            alert("Failed to submit report. Please try again.");
+        } finally {
+            setReportLoading(false);
+        }
+    };
+
+    const updateProfileField = (field, value) => {
+        setProfileData((prev) => ({ ...prev, [field]: value }));
+    };
+
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-[#F1F3F9]">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-[#F1F3F9] overflow-hidden">
+        <div className="flex h-screen overflow-hidden bg-[#F1F3F9]">
             <Sidebar handleLogout={handleLogout} />
 
-            <main className="flex-1 ml-[280px] flex flex-col h-full overflow-hidden">
-
-                <div className="flex justify-between items-center m-8 mb-4 bg-white p-3 px-8 rounded-[10px] shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-xl text-gray-800 tracking-tight font-normal">Settings</h1>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="text-xs font-bold text-gray-800">
-                                {profileData.fullName || "Responder Unit"}
-                            </p>
-                        </div>
-                    </div>
+            <main className="ml-[280px] flex h-full flex-1 flex-col overflow-hidden">
+                <div className="m-8 mb-4 flex items-center justify-between rounded-[10px] border border-gray-100 bg-white px-8 p-3 shadow-sm">
+                    <h1 className="text-xl font-normal tracking-tight text-gray-800">Settings</h1>
+                    <p className="text-xs font-bold text-gray-800">{profileData.fullName || "Responder Unit"}</p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
-                    <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-8">
-
-                        <div className="w-full md:w-64 space-y-2">
-                            <button
-                                onClick={() => setActiveTab("profile")}
-                                className={`w-full flex items-center gap-3 px-6 py-4 rounded-xl text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'profile' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white text-gray-400 hover:bg-gray-50 border border-gray-100'}`}
-                            >
-                                <User size={18} /> Profile
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("security")}
-                                className={`w-full flex items-center gap-3 px-6 py-4 rounded-xl text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'security' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white text-gray-400 hover:bg-gray-50 border border-gray-100'}`}
-                            >
-                                <Lock size={18} /> Security
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("notifications")}
-                                className={`w-full flex items-center gap-3 px-6 py-4 rounded-xl text-[11px] uppercase tracking-widest font-black transition-all ${activeTab === 'notifications' ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white text-gray-400 hover:bg-gray-50 border border-gray-100'}`}
-                            >
-                                <Bell size={18} /> Alerts
-                            </button>
+                    <div className="mx-auto flex max-w-5xl flex-col gap-8 md:flex-row">
+                        <div className="w-full space-y-2 md:w-64">
+                            {[
+                                { id: "profile", label: "Profile", icon: User },
+                                { id: "security", label: "Security", icon: Lock },
+                                { id: "notifications", label: "Reports", icon: Bell }
+                            ].map(({ id, label, icon: Icon }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setActiveTab(id)}
+                                    className={`flex w-full items-center gap-3 rounded-xl border px-6 py-4 text-[11px] font-black uppercase tracking-widest transition-all ${
+                                        activeTab === id
+                                            ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-100"
+                                            : "border-gray-100 bg-white text-gray-400 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <Icon size={18} /> {label}
+                                </button>
+                            ))}
                         </div>
 
-                        <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-12">
-
+                        <div className="mb-12 flex-1 overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-sm">
                             {activeTab === "profile" && (
-                                <form onSubmit={handleUpdateProfile} className="p-8 space-y-8 animate-in fade-in duration-500">
-
+                                <form onSubmit={handleUpdateProfile} className="animate-in space-y-8 p-8 fade-in duration-500">
                                     <div className="flex items-center gap-4">
-                                        <div className="relative">
-                                            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden text-blue-600 text-lg font-black shadow-inner border border-white">
-                                                {profileData.imageUrl ? (
-                                                    <img src={profileData.imageUrl} alt="Profile" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    profileData.fullName.charAt(0)
-                                                )}
-                                            </div>
+                                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white bg-blue-50 text-lg font-black text-blue-600 shadow-inner">
+                                            {profileData.imageUrl ? (
+                                                <img src={profileData.imageUrl} alt="Profile" className="h-full w-full object-cover" />
+                                            ) : (
+                                                profileData.fullName.charAt(0)
+                                            )}
                                         </div>
-                                        <div className="space-y-0">
-                                            <h2 className="text-sm font-black text-gray-800 leading-tight">{profileData.fullName}</h2>
-                                            <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">Responder Account</p>
+                                        <div>
+                                            <h2 className="text-sm font-black leading-tight text-gray-800">{profileData.fullName || "Responder Unit"}</h2>
+                                            <p className="text-[8px] font-bold uppercase tracking-widest text-gray-400">Responder Account</p>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Service Name / Full Name</label>
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Service Name / Full Name</label>
                                             <input
                                                 type="text"
                                                 value={profileData.fullName}
-                                                onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
-                                                className="w-full px-5 py-3 bg-[#F8F9FA] border border-gray-100 rounded-xl text-sm outline-none focus:border-blue-500/50 focus:bg-white transition-all font-medium"
+                                                onChange={(e) => updateProfileField("fullName", e.target.value)}
+                                                required
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500/50 focus:bg-white"
                                             />
                                         </div>
+
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Email Address</label>
-                                            <input type="email" value={profileData.email} disabled className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-400 font-medium cursor-not-allowed" />
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Email Address</label>
+                                            <input
+                                                type="email"
+                                                value={profileData.email}
+                                                disabled
+                                                className="w-full cursor-not-allowed rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 text-sm font-medium text-gray-400"
+                                            />
                                         </div>
+
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase text-gray-400 ml-1">Contact Number</label>
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Contact Number</label>
                                             <input
                                                 type="text"
                                                 value={profileData.phone}
-                                                onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                                                className="w-full px-5 py-3 bg-[#F8F9FA] border border-gray-100 rounded-xl text-sm outline-none focus:border-blue-500/50 transition-all font-medium"
+                                                onChange={(e) => updateProfileField("phone", e.target.value)}
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500/50"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Street</label>
+                                            <input
+                                                type="text"
+                                                value={profileData.street}
+                                                onChange={(e) => updateProfileField("street", e.target.value)}
+                                                placeholder="Enter street"
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500/50"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Barangay</label>
+                                            <input
+                                                type="text"
+                                                value={profileData.barangay}
+                                                onChange={(e) => updateProfileField("barangay", e.target.value)}
+                                                placeholder="Enter barangay"
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500/50"
                                             />
                                         </div>
                                     </div>
@@ -186,7 +284,7 @@ export default function RoleSettings() {
                                         <button
                                             type="submit"
                                             disabled={saveLoading}
-                                            className="flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-50"
+                                            className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
                                         >
                                             <Save size={16} /> {saveLoading ? "Saving..." : "Save Changes"}
                                         </button>
@@ -195,32 +293,113 @@ export default function RoleSettings() {
                             )}
 
                             {activeTab === "security" && (
-                                <div className="p-8 space-y-8 animate-in fade-in duration-500">
+                                <div className="animate-in space-y-8 p-8 fade-in duration-500">
                                     <div className="space-y-1">
-                                        <h2 className="text-lg font-black text-gray-800 uppercase tracking-tight">Security</h2>
-                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest italic">Maintain access security</p>
+                                        <h2 className="text-lg font-black uppercase tracking-tight text-gray-800">Security</h2>
+                                        <p className="text-[10px] font-black uppercase italic tracking-widest text-gray-400">Maintain access security</p>
                                     </div>
 
-                                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100/50 flex items-start gap-4">
+                                    <div className="flex items-start gap-4 rounded-2xl border border-blue-100/50 bg-blue-50/50 p-6">
                                         <div>
                                             <p className="text-sm font-black text-gray-800">Account Protection</p>
-                                            <p className="text-[11px] text-gray-500 leading-relaxed mt-1 font-medium">Your account is secured with Firebase Auth. Manage your credentials carefully to ensure emergency services availability.</p>
+                                            <p className="mt-1 text-[11px] font-medium leading-relaxed text-gray-500">
+                                                Your account is secured with Firebase Auth. Manage your credentials carefully to ensure emergency services availability.
+                                            </p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4 max-w-md">
-                                        <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl">
-                                            <p className="text-[10px] font-bold text-orange-700 uppercase">Note:</p>
-                                            <p className="text-[11px] text-orange-600 font-medium">Password changes require a recent login session for security reasons.</p>
+                                    <div className="max-w-md space-y-4">
+                                        <div className="rounded-xl border border-orange-100 bg-orange-50 p-4">
+                                            <p className="text-[10px] font-bold uppercase text-orange-700">Note:</p>
+                                            <p className="text-[11px] font-medium text-orange-600">Password changes require a recent login session for security reasons.</p>
                                         </div>
                                         <button
                                             type="button"
-                                            className="px-8 py-3.5 bg-gray-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95"
+                                            onClick={() => alert("Please use the password reset process for your registered email address.")}
+                                            className="rounded-xl bg-gray-800 px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-black active:scale-95"
                                         >
                                             Request Password Reset Email
                                         </button>
                                     </div>
                                 </div>
+                            )}
+
+                            {activeTab === "notifications" && (
+                                <form onSubmit={handleSendReport} className="animate-in space-y-6 p-8 fade-in duration-500">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <AlertTriangle size={20} className="text-blue-600" />
+                                            <h2 className="text-lg font-black uppercase tracking-tight text-gray-800">Submit Incident Report</h2>
+                                        </div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                            Report incident updates directly to the Admin Dashboard
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Incident Category</label>
+                                            <select
+                                                value={reportForm.incidentType}
+                                                onChange={(e) => setReportForm({ ...reportForm, incidentType: e.target.value })}
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium text-gray-700 outline-none transition-all focus:border-blue-500/50"
+                                            >
+                                                <option value="Medical Emergency">Medical Emergency</option>
+                                                <option value="Fire Incident">Fire Incident</option>
+                                                <option value="Vehicular Accident">Vehicular Accident</option>
+                                                <option value="Public Disturbance / Crime">Public Disturbance / Crime</option>
+                                                <option value="Natural Disaster / Rescue">Natural Disaster / Rescue</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Priority Level</label>
+                                            <select
+                                                value={reportForm.priority}
+                                                onChange={(e) => setReportForm({ ...reportForm, priority: e.target.value })}
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium text-gray-700 outline-none transition-all focus:border-blue-500/50"
+                                            >
+                                                <option value="High">High Priority (Urgent)</option>
+                                                <option value="Medium">Medium Priority</option>
+                                                <option value="Low">Low Priority</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Location / Barangay</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. East Bajac-Bajac, Olongapo City"
+                                                value={reportForm.location}
+                                                onChange={(e) => setReportForm({ ...reportForm, location: e.target.value })}
+                                                required
+                                                className="w-full rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500/50"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2 md:col-span-2">
+                                            <label className="ml-1 text-[10px] font-black uppercase text-gray-400">Incident Details & Situation Update</label>
+                                            <textarea
+                                                rows={4}
+                                                placeholder="Describe the ongoing situation, units deployed, or assistance required..."
+                                                value={reportForm.details}
+                                                onChange={(e) => setReportForm({ ...reportForm, details: e.target.value })}
+                                                required
+                                                className="w-full resize-none rounded-xl border border-gray-100 bg-[#F8F9FA] px-5 py-3 text-sm font-medium outline-none transition-all focus:border-blue-500/50"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button
+                                            type="submit"
+                                            disabled={reportLoading}
+                                            className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 active:scale-95 disabled:opacity-50"
+                                        >
+                                            <Send size={16} /> {reportLoading ? "Submitting Report..." : "Submit Report to Admin"}
+                                        </button>
+                                    </div>
+                                </form>
                             )}
                         </div>
                     </div>
