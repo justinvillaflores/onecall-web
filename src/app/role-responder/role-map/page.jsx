@@ -296,26 +296,30 @@ function RoleMapContent() {
     return (
         <div className="flex min-h-screen bg-[#F1F3F9]">
             <Sidebar handleLogout={() => signOut(auth)} />
-            <main className="flex-1 ml-[280px] p-8 h-screen flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center mb-6 bg-white p-4 px-8 rounded-xl shadow-sm border border-gray-100">
+            <main className="flex-1 ml-0 lg:ml-[270px] p-4 sm:p-6 lg:p-8 h-screen flex flex-col overflow-hidden pt-20 lg:pt-8 transition-all duration-300">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 bg-white p-4 sm:px-8 rounded-xl shadow-sm border border-gray-100">
                     <div>
-                        <h1 className="text-lg font-bold text-gray-800">Live Incident & Movement Tracker</h1>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>{activeCitizens.length} Live Tracking Users in Olongapo</p>
+                        <h1 className="text-base sm:text-lg font-bold text-gray-800">Live Incident & Movement Tracker</h1>
+                        <p className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase tracking-widest flex items-center gap-2 mt-0.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+                            {activeCitizens.length} Live Tracking Users in Olongapo
+                        </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                         <button onClick={() => setAutoFollow(!autoFollow)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${autoFollow ? "bg-blue-600 text-white shadow-md shadow-blue-200" : "bg-gray-100 text-gray-600 border border-gray-200"}`}>
-                            {autoFollow ? " Auto-Follow ON" : " Auto-Follow OFF"}
+                            {autoFollow ? "Auto-Follow ON" : "Auto-Follow OFF"}
                         </button>
-                        <div className="text-right border-l pl-4 border-gray-200"><p className="text-xs font-bold text-blue-600">{userData?.name || "Responder Unit"}</p></div>
+                        <div className="text-right sm:border-l sm:pl-4 border-gray-200">
+                            <p className="text-xs font-bold text-blue-600 truncate max-w-[120px] sm:max-w-none">{userData?.name || "Responder Unit"}</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex-1 bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden relative">
+                <div className="flex-1 bg-white rounded-2xl sm:rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden relative">
                     <MapContainer center={currentPos} zoom={17} style={{ height: "100%", width: "100%" }} zoomControl={true}>
                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         <MapLogic position={currentPos} autoFollow={autoFollow} />
 
-                        {/* Live Responder Marker - Batay sa Profile Address */}
                         {responderIcon && responderPos && (
                             <Marker position={responderPos} icon={responderIcon} zIndexOffset={1000}>
                                 <Popup>
@@ -343,7 +347,6 @@ function RoleMapContent() {
                             </Marker>
                         )}
 
-                        {/* Live Citizens Markers */}
                         {citizenIcon && activeCitizens.map((citizen) => {
                             const isTargetUser = citizen.id === targetCitizenId;
 
@@ -384,24 +387,24 @@ function RoleMapContent() {
                         })}
                     </MapContainer>
 
-                    <div className="absolute bottom-6 right-6 z-[500] bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-gray-100">
-                        <p className="text-[9px] font-black text-gray-400 uppercase mb-3 tracking-widest border-b pb-1">Live Legend</p>
-                        <div className="space-y-2.5">
-                            <div className="flex items-center gap-3">
-                                <div className="relative w-5 h-5 rounded-full bg-red-600 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
+                    <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-[500] bg-white/95 backdrop-blur-sm p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-xl border border-gray-100">
+                        <p className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase mb-2 sm:mb-3 tracking-widest border-b pb-1">Live Legend</p>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="relative w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-red-600 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
                                     {userData?.imageUrl ? (
                                         <img src={userData.imageUrl} alt="Responder Logo" className="w-full h-full object-cover rounded-full" />
                                     ) : (
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5 sm:w-3 sm:h-3">
                                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                         </svg>
                                     )}
                                 </div>
-                                <span className="text-[10px] font-bold text-gray-700 uppercase">Responder Location</span>
+                                <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase">Responder Location</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-sm ml-0.5 animate-pulse"></div>
-                                <span className="text-[10px] font-bold text-gray-700 uppercase">Live Citizen</span>
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-blue-600 rounded-full border-2 border-white shadow-sm ml-0.5 animate-pulse shrink-0"></div>
+                                <span className="text-[9px] sm:text-[10px] font-bold text-gray-700 uppercase">Live Citizen</span>
                             </div>
                         </div>
                     </div>

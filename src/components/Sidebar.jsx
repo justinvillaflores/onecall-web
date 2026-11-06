@@ -14,16 +14,23 @@ import {
     Users,
     Settings,
     LogOut,
-    MessageSquare
+    MessageSquare,
+    Menu,
+    X
 } from "lucide-react";
 
 export default function Sidebar() {
     const router = useRouter();
     const pathname = usePathname();
 
+    const [isOpen, setIsOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [userRole, setUserRole] = useState(null);
     const [profileImage, setProfileImage] = useState(null);
+
+    useEffect(() => {
+        setIsOpen(false);
+    }, [pathname]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -75,14 +82,48 @@ export default function Sidebar() {
 
     return (
         <>
-            <aside className="w-[270px] flex flex-col h-screen fixed left-0 top-0 z-[50] shadow-2xl overflow-hidden" style={{ backgroundColor: "#2D3FE2" }}>
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#2D3FE2] z-[40] flex items-center justify-between px-4 shadow-md">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        aria-label="Toggle Navigation Menu"
+                        className="text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                        {isOpen ? <X size={26} /> : <Menu size={26} />}
+                    </button>
+                    <span className="text-white font-black tracking-widest text-sm uppercase">
+                        {userRole === "responder" ? "Responder" : "Administrator"}
+                    </span>
+                </div>
+            </div>
+
+            {isOpen && (
+                <div
+                    onClick={() => setIsOpen(false)}
+                    className="fixed inset-0 bg-black/50 z-[45] lg:hidden backdrop-blur-sm transition-opacity"
+                />
+            )}
+
+            <aside
+                className={`w-[270px] flex flex-col h-screen fixed left-0 top-0 z-[50] shadow-2xl overflow-hidden transition-transform duration-300 ease-in-out ${
+                    isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                }`}
+                style={{ backgroundColor: "#2D3FE2" }}
+            >
+                <button
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close Sidebar"
+                    className="lg:hidden absolute top-4 right-4 text-white/80 hover:text-white p-1"
+                >
+                    <X size={24} />
+                </button>
 
                 <div className="pt-10 pb-6 w-full flex flex-col items-center justify-center">
                     <div className="w-28 h-28 flex items-center justify-center overflow-hidden rounded-full border-2 border-white/20">
                         {profileImage ? (
                             <img
                                 src={profileImage}
-                                alt="Responder Profile"
+                                alt="Profile"
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -114,7 +155,10 @@ export default function Sidebar() {
                         return (
                             <button
                                 key={item.name}
-                                onClick={() => router.push(item.path)}
+                                onClick={() => {
+                                    router.push(item.path);
+                                    setIsOpen(false);
+                                }}
                                 className={`w-full flex items-center gap-4 px-4 py-3 transition-all duration-200 ${
                                     isActive
                                         ? "bg-white text-[#2D3FE2] shadow-md rounded-2xl"
@@ -132,7 +176,10 @@ export default function Sidebar() {
                     <div className="h-[1px] bg-white/20 w-full mb-6"></div>
                     <div className="space-y-3">
                         <button
-                            onClick={() => router.push(userRole === "responder" ? "/role-responder/role-settings" : "/settings")}
+                            onClick={() => {
+                                router.push(userRole === "responder" ? "/role-responder/role-settings" : "/settings");
+                                setIsOpen(false);
+                            }}
                             className="w-full flex items-center gap-4 px-4 py-3 text-[15px] font-bold text-white hover:bg-white/10 rounded-xl transition-all"
                         >
                             <Settings size={20} />

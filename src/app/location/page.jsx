@@ -12,7 +12,7 @@ import "leaflet/dist/leaflet.css";
 
 const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapContainer), {
     ssr: false,
-    loading: () => <div className="flex h-full items-center justify-center bg-gray-100 text-sm text-gray-500">Loading city map...</div>
+    loading: () => <div className="flex h-full items-center justify-center bg-gray-100 text-xs sm:text-sm text-gray-500">Loading city map...</div>
 });
 const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
 const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ssr: false });
@@ -240,28 +240,28 @@ export default function AdminLocationPage() {
         <div className="flex min-h-screen bg-[#F5F6FA]">
             <Sidebar handleLogout={handleLogout} />
 
-            <main className="ml-[280px] flex h-screen min-w-0 flex-1 flex-col overflow-hidden p-6">
-                <header className="mb-4 flex items-center justify-between rounded-xl border border-gray-100 bg-white px-8 py-4 shadow-sm">
+            <main className="ml-0 lg:ml-[270px] flex h-screen min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-6 pt-20 lg:pt-6 transition-all duration-300 w-full">
+                <header className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 rounded-xl border border-gray-100 bg-white p-3.5 sm:px-8 sm:py-4 shadow-sm">
                     <div>
-                        <h1 className="text-lg font-bold tracking-tight text-gray-800">City-Wide Live Monitoring</h1>
-                        <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                        <h1 className="text-base sm:text-lg font-bold tracking-tight text-gray-800">City-Wide Live Monitoring</h1>
+                        <p className="flex items-center gap-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-0.5 sm:mt-0">
+                            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-emerald-500" />
                             Olongapo City Real-Time Fleet & Active Users
                         </p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-xs font-bold uppercase text-gray-500">Units on Map</p>
-                        <p className="text-xl font-black leading-none text-blue-600">{units.length}</p>
+                    <div className="flex sm:block items-center justify-between border-t sm:border-t-0 border-gray-100 pt-2 sm:pt-0 sm:text-right">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase text-gray-500">Units on Map</p>
+                        <p className="text-lg sm:text-xl font-black leading-none text-blue-600">{units.length}</p>
                     </div>
                 </header>
 
                 {mapError && (
-                    <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                    <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-2.5 sm:p-3 text-xs sm:text-sm text-amber-800">
                         {mapError}
                     </div>
                 )}
 
-                <section className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md">
+                <section className="relative min-h-0 flex-1 overflow-hidden rounded-xl sm:rounded-2xl border border-gray-100 bg-white shadow-md">
                     <MapContainer center={CENTER} zoom={14} style={MAP_STYLE}>
                         <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -289,13 +289,13 @@ export default function AdminLocationPage() {
                                     </Tooltip>
 
                                     <Popup>
-                                        <div className="min-w-[220px] space-y-2 p-2 font-sans">
+                                        <div className="min-w-[200px] sm:min-w-[220px] space-y-2 p-1.5 sm:p-2 font-sans">
                                             <div className="flex items-center justify-between gap-2">
                                                 <div className="flex min-w-0 items-center gap-2">
                                                     {isResponder && unit.imageUrl && (
-                                                        <img src={unit.imageUrl} alt="Responder logo" className="h-7 w-7 rounded-full border border-red-200 object-cover" />
+                                                        <img src={unit.imageUrl} alt="Responder logo" className="h-7 w-7 rounded-full border border-red-200 object-cover shrink-0" />
                                                     )}
-                                                    <p className={`break-words text-sm font-black uppercase ${isResponder ? "text-red-600" : "text-blue-600"}`}>
+                                                    <p className={`break-words text-xs sm:text-sm font-black uppercase ${isResponder ? "text-red-600" : "text-blue-600"}`}>
                                                         {title}
                                                     </p>
                                                 </div>
@@ -325,16 +325,16 @@ export default function AdminLocationPage() {
                         })}
                     </MapContainer>
 
-                    <div className="absolute bottom-6 right-6 z-[1000] rounded-2xl border border-gray-100 bg-white/95 p-4 shadow-xl backdrop-blur-sm">
-                        <p className="mb-3 border-b pb-1 text-[9px] font-black uppercase tracking-widest text-gray-400">Live Fleet Legend</p>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <span className="h-5 w-5 rounded-full border-2 border-white bg-red-600 shadow-sm" />
-                                <span className="text-[10px] font-bold uppercase text-gray-700">Emergency Responders</span>
+                    <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 z-[1000] rounded-xl sm:rounded-2xl border border-gray-100 bg-white/95 p-3 sm:p-4 shadow-xl backdrop-blur-sm">
+                        <p className="mb-2 sm:mb-3 border-b pb-1 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-gray-400">Live Fleet Legend</p>
+                        <div className="space-y-2 sm:space-y-3">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <span className="h-4 w-4 sm:h-5 sm:w-5 shrink-0 rounded-full border-2 border-white bg-red-600 shadow-sm" />
+                                <span className="text-[9px] sm:text-[10px] font-bold uppercase text-gray-700">Emergency Responders</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <span className="h-4 w-4 rounded-full border-2 border-white bg-blue-600 shadow-sm" />
-                                <span className="text-[10px] font-bold uppercase text-gray-700">Citizens / Users</span>
+                            <div className="flex items-center gap-2.5 sm:gap-3">
+                                <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 rounded-full border-2 border-white bg-blue-600 shadow-sm" />
+                                <span className="text-[9px] sm:text-[10px] font-bold uppercase text-gray-700">Citizens / Users</span>
                             </div>
                         </div>
                     </div>
