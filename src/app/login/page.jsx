@@ -72,21 +72,21 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-[85vh] flex items-center justify-center px-4 bg-slate-50">
-            <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] w-full max-w-md border border-gray-100">
+        <div className="min-h-[75vh] sm:min-h-[85vh] flex items-center justify-center px-4 py-8 bg-slate-50">
+            <div className="bg-white p-6 sm:p-8 md:p-12 rounded-2xl sm:rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] w-full max-w-md border border-gray-100">
 
-                <div className="text-center mb-10">
-                    <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                <div className="text-center mb-6 sm:mb-10">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                         Command Center
                     </h2>
-                    <p className="text-slate-500 mt-2 font-medium">
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 sm:mt-2 font-medium">
                         Sign in to access emergency dashboard
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-5">
+                <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
                     <div>
-                        <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
+                        <label className="block text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 mb-1.5 sm:mb-2 ml-1">
                             Email Address
                         </label>
                         <input
@@ -96,12 +96,12 @@ export default function LoginPage() {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             autoComplete="email"
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                            className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-2 ml-1">
+                        <label className="block text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-500 mb-1.5 sm:mb-2 ml-1">
                             Password
                         </label>
                         <div className="relative">
@@ -112,14 +112,14 @@ export default function LoginPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 autoComplete="current-password"
-                                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                                className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                             >
-                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
                     </div>
@@ -127,12 +127,12 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all transform active:scale-[0.98] disabled:opacity-50"
+                        className="w-full bg-blue-600 text-white py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all transform active:scale-[0.98] disabled:opacity-50"
                     >
                         {loading ? (
                             <div className="flex items-center justify-center gap-2">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                <span>Verifying...</span>
+                                <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-xs sm:text-sm">Verifying...</span>
                             </div>
                         ) : (
                             "Login to Portal"
@@ -140,7 +140,7 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
                     <span className="text-green-500">●</span>
                     Authorized Personnel Only • Secure v4.2
                 </div>
