@@ -335,7 +335,6 @@ export default function RoleSettings() {
                                 <form onSubmit={handleSendReport} className="space-y-4 sm:space-y-6 p-4 sm:p-6 lg:p-8">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <AlertTriangle size={18} className="text-blue-600 sm:w-5 sm:h-5" />
                                             <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-gray-800">Submit Incident Report</h2>
                                         </div>
                                         <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400">

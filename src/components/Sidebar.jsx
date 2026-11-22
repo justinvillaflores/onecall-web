@@ -28,6 +28,8 @@ export default function Sidebar() {
     const [userRole, setUserRole] = useState(null);
     const [profileImage, setProfileImage] = useState(null);
 
+    const isResponder = userRole === "responder";
+
     useEffect(() => {
         setIsOpen(false);
     }, [pathname]);
@@ -50,23 +52,21 @@ export default function Sidebar() {
         return () => unsubscribe();
     }, []);
 
-    const adminItems = [
-        { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-        { name: "Responder", path: "/responder", icon: UserRound },
-        { name: "Location", path: "/location", icon: MapPin },
-        { name: "Hotlines", path: "/hotlines", icon: Phone },
-        { name: "Announcement", path: "/announcement", icon: Megaphone },
-        { name: "Users", path: "/users", icon: Users },
-    ];
-
-    const responderItems = [
-        { name: "Dashboard", path: "/role-responder/role-dashboard", icon: LayoutDashboard },
-        { name: "Announcement", path: "/role-responder/role-announcement", icon: Megaphone },
-        { name: "Messages", path: "/role-responder/role-messages", icon: MessageSquare },
-        { name: "Map", path: "/role-responder/role-map", icon: MapPin },
-    ];
-
-    const menuItems = userRole === "responder" ? responderItems : adminItems;
+    const menuItems = isResponder
+        ? [
+            { name: "Dashboard", path: "/role-responder/role-dashboard", icon: LayoutDashboard },
+            { name: "Announcement", path: "/role-responder/role-announcement", icon: Megaphone },
+            { name: "Messages", path: "/role-responder/role-messages", icon: MessageSquare },
+            { name: "Map", path: "/role-responder/role-map", icon: MapPin },
+        ]
+        : [
+            { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+            { name: "Responder", path: "/responder", icon: UserRound },
+            { name: "Location", path: "/location", icon: MapPin },
+            { name: "Hotlines", path: "/hotlines", icon: Phone },
+            { name: "Announcement", path: "/announcement", icon: Megaphone },
+            { name: "Users", path: "/users", icon: Users },
+        ];
 
     const confirmLogout = async () => {
         try {
@@ -92,7 +92,7 @@ export default function Sidebar() {
                         {isOpen ? <X size={26} /> : <Menu size={26} />}
                     </button>
                     <span className="text-white font-black tracking-widest text-sm uppercase">
-                        {userRole === "responder" ? "Responder" : "Administrator"}
+                        {isResponder ? "Responder" : "Administrator"}
                     </span>
                 </div>
             </div>
@@ -119,7 +119,11 @@ export default function Sidebar() {
                 </button>
 
                 <div className="pt-10 pb-6 w-full flex flex-col items-center justify-center">
-                    <div className="w-28 h-28 flex items-center justify-center overflow-hidden rounded-full border-2 border-white/20">
+                    <div
+                        className={`w-28 h-28 flex items-center justify-center overflow-hidden ${
+                            isResponder ? "rounded-full border-2 border-white/20" : ""
+                        }`}
+                    >
                         {profileImage ? (
                             <img
                                 src={profileImage}
@@ -130,21 +134,21 @@ export default function Sidebar() {
                             <img
                                 src="/download1.png"
                                 alt="Default Logo"
-                                className="w-28 h-28 object-contain"
+                                className="w-35 h-35 object-contain"
                             />
                         )}
                     </div>
 
                     <div className="text-center mt-3">
                         <h2 className="text-white text-[14px] font-black tracking-[4px] uppercase mb-1">
-                            {userRole === "responder" ? "Responder" : "Administrator"}
+                            {isResponder ? "Responder" : "Administrator"}
                         </h2>
-                        <div className="h-[2px] w-8 bg-white/30 mx-auto rounded-full"></div>
+                        <div className="h-[2px] w-8 bg-white/30 mx-auto rounded-full" />
                     </div>
                 </div>
 
                 <div className="px-10">
-                    <div className="h-[1px] bg-white/20 w-full mb-3"></div>
+                    <div className="h-[1px] bg-white/20 w-full mb-3" />
                 </div>
 
                 <nav className="flex-1 px-5 space-y-3 overflow-y-auto no-scrollbar">
@@ -173,11 +177,11 @@ export default function Sidebar() {
                 </nav>
 
                 <div className="px-5 pb-10">
-                    <div className="h-[1px] bg-white/20 w-full mb-6"></div>
+                    <div className="h-[1px] bg-white/20 w-full mb-6" />
                     <div className="space-y-3">
                         <button
                             onClick={() => {
-                                router.push(userRole === "responder" ? "/role-responder/role-settings" : "/settings");
+                                router.push(isResponder ? "/role-responder/role-settings" : "/settings");
                                 setIsOpen(false);
                             }}
                             className="w-full flex items-center gap-4 px-4 py-3 text-[15px] font-bold text-white hover:bg-white/10 rounded-xl transition-all"

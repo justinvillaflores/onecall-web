@@ -448,7 +448,6 @@ export default function UsersPage() {
                                 : "bg-amber-50 text-amber-600 border border-amber-200"
                         }`}
                     >
-                        <ShieldCheck size={16} />
 
                         <span>
                             {isPrivacyProtected
@@ -535,7 +534,6 @@ export default function UsersPage() {
                                                             title="Verified User Authenticity"
                                                             className="inline-flex items-center text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded text-[10px] font-bold gap-0.5 whitespace-nowrap"
                                                         >
-                                                                <ShieldCheck size={12} />
                                                                 Verified
                                                             </span>
                                                     ) : (
@@ -833,11 +831,6 @@ export default function UsersPage() {
 
                         <div className="flex justify-between items-center gap-3 mb-4">
                             <div className="flex items-center gap-2 text-gray-900 font-bold min-w-0">
-                                <Lock
-                                    size={20}
-                                    className="text-[#2D44E7] shrink-0"
-                                />
-
                                 <h3 className="text-sm sm:text-base">
                                     Security Verification
                                 </h3>

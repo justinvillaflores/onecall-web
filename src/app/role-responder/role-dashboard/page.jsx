@@ -288,7 +288,6 @@ export default function RoleDashboard() {
                         >
                             <div className="flex items-center gap-2.5">
                                 <div className="p-1.5 bg-blue-50 text-blue-600 rounded-xl">
-                                    <Calendar size={16} />
                                 </div>
                                 <div className="text-left">
                                     <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block leading-tight">
@@ -438,7 +437,6 @@ export default function RoleDashboard() {
                                                                 Incident Category
                                                             </p>
                                                             <span className="inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-400/30 text-amber-300 px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold">
-                                                <ShieldAlert size={12} />
                                                                 {alert.incidentType || "Uncategorized"}
                                             </span>
                                                         </div>

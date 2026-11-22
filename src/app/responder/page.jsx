@@ -303,7 +303,6 @@ export default function ResponderPage() {
                         </div>
                     </div>
                     <button onClick={handlePrivacyToggleRequest} className={`flex items-center justify-center gap-2 rounded-xl border px-3.5 sm:px-4 py-2 text-xs font-bold transition-all shrink-0 ${isPrivacyProtected ? "border-emerald-200 bg-emerald-50 text-emerald-600" : "border-amber-200 bg-amber-50 text-amber-600"}`}>
-                        <ShieldCheck size={16} />
                         <span>{isPrivacyProtected ? "Privacy Mask: ON" : "Privacy Mask: OFF"}</span>
                     </button>
                 </div>
@@ -473,7 +472,7 @@ export default function ResponderPage() {
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                     <div className="relative w-full max-w-[380px] rounded-2xl bg-white p-5 sm:p-6 shadow-2xl my-auto">
                         <div className="mb-4 flex items-center justify-between">
-                            <div className="flex items-center gap-2 font-bold text-gray-900 text-sm sm:text-base"><Lock size={18} className="text-[#2D44E7]" /><h3>Security Verification</h3></div>
+                            <div className="flex items-center gap-2 font-bold text-gray-900 text-sm sm:text-base"><h3>Security Verification</h3></div>
                             <button onClick={() => setShowPasswordModal(false)} className="text-gray-400 transition-colors hover:text-gray-600"><X size={18} /></button>
                         </div>
                         <p className="mb-4 text-xs sm:text-sm text-gray-600">To disable the Data Privacy mask and reveal confidential information, please enter your admin password:</p>
