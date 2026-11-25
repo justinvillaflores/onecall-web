@@ -132,7 +132,7 @@ export default function Sidebar() {
                             />
                         ) : (
                             <img
-                                src="/download1.png"
+                                src="/onecall.png"
                                 alt="Default Logo"
                                 className="w-35 h-35 object-contain"
                             />

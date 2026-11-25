@@ -21,10 +21,10 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                <div className="w-full lg:w-1/2 mt-10 sm:mt-16 lg:mt-0 relative flex justify-center">
-                    <div className="w-[85%] sm:w-[95%] max-w-[450px] lg:max-w-none h-auto flex items-center justify-center p-2 sm:p-6 transition-transform hover:scale-105 duration-500">
+                <div className="w-full lg:w-1/2 mt-10 sm:mt-16 lg:mt-0 relative flex justify-center lg:-translate-x--15">
+                    <div className="w-[70%] sm:w-[75%] max-w-[450px] lg:max-w-none h-auto flex items-center justify-center p-2 sm:p-6 transition-transform hover:scale-105 duration-500">
                         <img
-                            src="/download1.png"
+                            src="/onecall.png"
                             alt="OneCall Logo"
                             className="w-full h-full object-contain filter drop-shadow-xl"
                         />
