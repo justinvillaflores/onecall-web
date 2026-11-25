@@ -11,7 +11,7 @@ export default function HomePage() {
                         <span className="text-blue-600">Safe & Connected.</span>
                     </h2>
                     <p className="text-sm sm:text-base lg:text-lg text-slate-600 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                        OneCall provides offline access to emergency hotlines. Get instant help from police, fire, and medical services even without an internet connection.
+                        OneCall provides authorized administrators and responders with real-time access to emergency reports, citizen communications, and hotline management for faster emergency dispatch.
                     </p>
 
                     <div className="pt-2 sm:pt-4">
